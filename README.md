@@ -1,10 +1,10 @@
-<<<<<<< HEAD
+
 # BlueCat Openstack Example Integration
 =======
-# BlueCat Openstack Integration Example
+
 
 * Free software: Apache license
->>>>>>> 7072c9bb5baab3925cb9b2d35b40980f9640ce45
+
 
 ===============================
 Bluecat Neutron Monitor
@@ -125,9 +125,7 @@ USER="stack"
 GROUP="stack"
 
 sudo update-rc.d bluecat_nova_monitor defaults
-<<<<<<< HEAD
-sudo service bluecat_nova_monitor start [stop|restart|status]
-=======
 
 sudo service bluecat_nova_monitor start [stop|restart|status]
->>>>>>> 7072c9bb5baab3925cb9b2d35b40980f9640ce45
+
+
