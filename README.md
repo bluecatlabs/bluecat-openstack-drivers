@@ -67,6 +67,7 @@ USER="stack"
 GROUP="stack"
 
 sudo update-rc.d bluecat_neutron_monitor defaults
+
 sudo service bluecat_neutron_monitor start [stop|restart|status]
 
 
@@ -119,4 +120,5 @@ USER="stack"
 GROUP="stack"
 
 sudo update-rc.d bluecat_nova_monitor defaults
+
 sudo service bluecat_nova_monitor start [stop|restart|status]
