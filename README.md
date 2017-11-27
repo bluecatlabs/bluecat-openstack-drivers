@@ -54,12 +54,16 @@ notification_topics = notifications
 notification_driver = messagingv2
 
 Copy the bluecat_neutron_monitor.py to a suitable location (such as /opt/stack/devstack/bluecat)
+
 chmod +x bluecat_neutron_monitor.py
+
 mv bluecat_neutron_monitor.py bluecat_neutron_monitor
 
 Copy the bluecat_neutron_monitor.sh to /etc/init.d
 mv bluecat_neutron_monitor.sh bluecat_neutron_monitor
+
 chmod +x /etc/init.d/bluecat_neutron_monitor
+
 sudo vi /etc/init.d/bluecat_neutron_monitor
 
 update the script parameters (APPDIR/APPARGS/USER/GROUP) to install locations and requirements, for example:
@@ -107,12 +111,17 @@ Devstack Installation
 ---------------------
 
 Copy the bluecat_nova_monitor.py to a suitable location (such as /opt/stack/devstack/bluecat)
+
 chmod +x bluecat_nova_monitor.py
+
 mv bluecat_nova_monitor.py bluecat_nova_monitor
 
 Copy the bluecat_nova_monitor.sh to /etc/init.d
+
 mv bluecat_nova_monitor.sh bluecat_nova_monitor
+
 chmod +x /etc/init.d/bluecat_nova_monitor
+
 sudo vi /etc/init.d/bluecat_nova_monitor
 
 update the script parameters (APPDIR/APPARGS/USER/GROUP) to install locations and requirements, for example:
