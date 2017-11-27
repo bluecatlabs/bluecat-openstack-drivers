@@ -1,6 +1,6 @@
 
 # BlueCat Openstack Example Integration
-=======
+
 
 
 * Free software: Apache license
