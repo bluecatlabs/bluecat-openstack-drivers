@@ -14,7 +14,7 @@
 #    under the License.
 
 # DH
-# V0.10  20170525
+# V0.11  20171127
 
 import itertools
 import random
@@ -46,15 +46,19 @@ from pip._vendor.ipaddress import ip_address
 LOG = log.getLogger(__name__)
 
 
-BAM_ADDRESS='192.168.1.100'
-BAM_API_USER='openstack'
-BAM_API_PASS='openstack'
+BAM_ADDRESS='172.16.29.10'
+BAM_API_USER='admin01'
+BAM_API_PASS='password'
 BAM_CONFIG_NAME='OpenStack'
-BAM_IPV4_PUBLIC_BLOCK="192.168.1.0/24"
+BAM_IPV4_PUBLIC_BLOCK="172.16.0.0/8"
 BAM_IPV4_PRIVATE_BLOCK="10.0.0.0/8"
+BAM_IPV4_PRIVATE_NETWORK="10.0.0.0/26"
+BAM_IPV4_PRIVATE_IPRANGE_STARTIP="10.0.0.2"
+BAM_IPV4_PRIVATE_IPRANGE_ENDIP="10.0.0.62"
+BAM_IPV4_PRIVATE_IPRANGE_GW="10.0.0.1"
 BAM_IPV6_PUBLIC_BLOCK="2000::/3"
 BAM_IPV6_PRIVATE_BLOCK="FC00::/6"
-BAM_DNS_ZONE="bluecat.lab"
+BAM_DNS_ZONE="lab2.com"
 
 def _bam_login():
    LOG.info("BCN: Connecting to BAM at %s ..." % BAM_ADDRESS )
@@ -64,11 +68,12 @@ def _bam_login():
 
 
 def _bam_logout(soap_client):
+   LOG.info("BCN: Disconnecting from BAM at %s ..." % BAM_ADDRESS )
    soap_client.service.logout()
 
 
 def _get_bam_configid(soap_client):
-   config = soap_client.service.getEntityByName(0, "OpenStack", 'Configuration')
+   config = soap_client.service.getEntityByName(0, BAM_CONFIG_NAME, 'Configuration')
    configID = long(config['id'])
    LOG.info("BCN: Got configID %d" % (configID))
    return configID
@@ -129,7 +134,7 @@ class NeutronDbSubnet(ipam_base.Subnet):
         ipam_subnet = ipam_db_api.IpamSubnetManager.load_by_neutron_subnet_id(
             ctx, neutron_subnet_id)
         if not ipam_subnet:
-            LOG.error(_LE("IPAM subnet referenced to "
+            LOG.error(_LE("BCN: IPAM subnet referenced to "
                           "Neutron subnet %s does not exist"),
                       neutron_subnet_id)
             raise n_exc.SubnetNotFound(subnet_id=neutron_subnet_id)
@@ -311,7 +316,7 @@ class NeutronDbSubnet(ipam_base.Subnet):
         soap_client = _bam_login()
         configID = _get_bam_configid(soap_client)
     
-        LOG.info("Deleting host %s from BAM ..." % (address))
+        LOG.info("BCN: Deleting host %s from BAM ..." % (address))
         if ipObj.version == 4:
                 delBCIP4Obj(address, configID, soap_client)
         else:
@@ -394,9 +399,9 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
             subnet_request = ipam_req.SpecificSubnetRequest(
                             subnet_request._tenant_id,
                             subnet_request._subnet_id,
-                            '10.0.0.0/26',
-                            allocation_pools=[netaddr.IPRange('10.0.0.2', '10.0.0.62')],
-                            gateway_ip='10.0.0.1'
+                            BAM_IPV4_PRIVATE_NETWORK,
+                            allocation_pools=[netaddr.IPRange(BAM_IPV4_PRIVATE_IPRANGE_STARTIP, BAM_IPV4_PRIVATE_IPRANGE_ENDIP)],
+                            gateway_ip=BAM_IPV4_PRIVATE_IPRANGE_GW
                             )
 
         soap_client = _bam_login()
@@ -494,7 +499,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         count = ipam_db_api.IpamSubnetManager.delete(self._context,
                                                      subnet_id)
         if count < 1:
-            LOG.error(_LE("IPAM subnet referenced to "
+            LOG.error(_LE("BCN: IPAM subnet referenced to "
                           "Neutron subnet %s does not exist"),
                       subnet_id)
             raise n_exc.SubnetNotFound(subnet_id=subnet_id)
@@ -512,13 +517,13 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         return False
 
 
-# ----------------------- Dave Stuff ------------------
+# ----------------------- Bluecat API Routines ------------------
 
 # DMH
     @staticmethod
     def dumpObj(descr, logFile, obj):
 
-        logFile.write("Name : %s\n" % (descr))
+        logFile.write("BCN: Name : %s\n" % (descr))
         pprint(getmembers(obj), logFile)
         logFile.write("\n")
     
@@ -654,7 +659,7 @@ def apiGetBlockID_old(conn, tokenData, parentID, cidr, blockType):
         'postman-token': "412301d3-4361-d2df-b1cc-b0666d147cc6"
         }
 
-    logFile2 = open("/tmp/stack2.log", "a")
+    logFile2 = open("/tmp/stack.log", "a")
 
 
     requestStr = ""
@@ -728,12 +733,12 @@ def addBCNetwork(parentID, cidr, subnet_name, subnet_id, version):
             testNet['name'] = subnet_name
             testNet['properties'] = newProps
                 
-            print "Updating Network ..."
+            LOG.info( "BCN: Updating Network %s ..." % (cidr))
             soap_client.service.update(testNet)
             soap_client.service.logout()
             return(testNet['id'])
              
-        LOG.info("Creating IPv4 Net ...")
+        LOG.info("BCN: Creating IPv4 Net: %s, properties: %s, parentID: %s ..." % (cidr, properties, parentID))
         netid = soap_client.service.addIP4Network(parentID,  cidr, properties)
     
     else:
@@ -749,13 +754,13 @@ def addBCNetwork(parentID, cidr, subnet_name, subnet_id, version):
             testNet['name'] = subnet_name
             testNet['properties'] = newProps
                 
-            print "Updating Network ..."
+            LOG.info( "BCN: Updating Network ...")
             soap_client.service.update(testNet)
             soap_client.service.logout()
             return(testNet['id'])            
 
 
-        LOG.info("Creating IPv6 Net ...")
+        LOG.info("BCN: Creating IPv6 Net: %s, subnet_name: %s, properties: %s, parentID: %s ..." % (cidr, subnet_name, properties, parentID))
         #LOG.info("pass addIP6NetworkByPrefix: pID: %s cidr: %s sName: %s props :%s" %(parentID,  cidr, subnet_name, properties))
         netid = soap_client.service.addIP6NetworkByPrefix(parentID,  cidr, subnet_name, properties)
 
@@ -767,10 +772,7 @@ def addBCNetwork(parentID, cidr, subnet_name, subnet_id, version):
 def delBCNetwork(configID, subnet_id):
     # Currently only does IPv4 User networks
 
-    # Will need rewriting anyway when actual subnet names are used rather than the subnet_id
-    # Q: Can UDF data be retrieved by the API is subnet_id is moved to 
-
-    # Really this needs to search each IPv4 and IPv6 TL block and only then report an error if the 
+     # Really this needs to search each IPv4 and IPv6 TL block and only then report an error if the 
     # subnet_id (name) is still not found 
     soap_client = _bam_login()
     
@@ -811,7 +813,7 @@ def updateBCNetwork(soap_client, configID, netCIDR, newNetName, newUUID):
     # Get netid
     ipNet = netaddr.IPNetwork(netCIDR)
     
-    LOG.info("Getting NetID Info  ...")
+    LOG.info("BCN: Getting NetID Info  ...")
     net = ""
     if ipNet.version == 4:
         net = soap_client.service.getIPRangedByIP(configID, "IP4Network", ipNet[0])
@@ -822,7 +824,7 @@ def updateBCNetwork(soap_client, configID, netCIDR, newNetName, newUUID):
     netid = net['id']
     
     if not netid:
-        LOG.info("[Warning] : Network does not exist -Skipping ...." % (netCIDR))
+        LOG.info("BCN: [Warning] : Network does not exist -Skipping ...." % (netCIDR))
         return               
 
     newProps = updatePropsStr(net['properties'], "UUID", newUUID)
@@ -880,8 +882,7 @@ def createBCPI6Obj(ipAddr, hostName, uuid, mac, configID, soap_client):
 
 
 # Currently this is only used to update existing objects when the stack starts (ie called from update_subnet),
-# there is currently no 'update_port' type call in the reference driver though one could probably be added if
-# requests.py was updated to call this. 
+# there is currently no 'update_port' type call in the reference driver (See portUpdateMonitor.py)
 def updateIP4Obj(ipAddr, newName, uuid, configID, soap_client):
 
     LOG.info("BCN: Getting ViewID Info  ...")
@@ -901,7 +902,7 @@ def updateIP4Obj(ipAddr, newName, uuid, configID, soap_client):
     ipID = ipObj['id']   
     
     if not ipID:
-        LOG.warning("BCN: [Warning] : IP %s does not exist -Skipping ...." % (ipAddr))
+        LOG.warning("BCN: [Warning] : IP %s is not defined in BAM -Skipping ...." % (ipAddr))
         return        
     
     newProps = updatePropsStr(ipObj['properties'], "UUID", uuid)

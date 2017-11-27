@@ -11,7 +11,7 @@
 #    under the License.
 
 # DH
-# V0.6  20170526
+# V0.6  20170621
 
 import abc
 
@@ -204,6 +204,13 @@ class SpecificSubnetRequest(SubnetRequest):
 class AddressRequest(object):
     """Abstract base class for address requests"""
 
+    # DMH
+    def __init__(self, obj, params=None):
+        
+        super(AddressRequest, self).__init__()
+        LOG.info("BCN: AddressRequest params:%s" %(params))
+        #LOG.info("BCN: AddressRequest ...")
+
 
 class SpecificAddressRequest(AddressRequest):
     """For requesting a specified address from IPAM"""
@@ -212,7 +219,7 @@ class SpecificAddressRequest(AddressRequest):
         :param address: The address being requested
         :type address: A netaddr.IPAddress or convertible to one.
         """
-        super(SpecificAddressRequest, self).__init__()
+        #super(SpecificAddressRequest, self).__init__()
         self._address = netaddr.IPAddress(address)
         
         LOG.info("BCN: SpecificAddressRequest params:%s" %(params))
@@ -242,7 +249,7 @@ class AnyAddressRequest(AddressRequest):
 
     def __init__(self, port_name=None, id=None, params=None):
 
-            super(AnyAddressRequest, self).__init__()
+            #super(AnyAddressRequest, self).__init__()
 
             LOG.info("BCN: AnyAddressRequest params:%s" %(params))
 
@@ -273,7 +280,7 @@ class PreferNextAddressRequest(AnyAddressRequest):
     
     def __init__(self, port_name=None, id=None, params=None):
 
-            super(PreferNextAddressRequest, self).__init__()
+            #super(PreferNextAddressRequest, self).__init__()
 
             LOG.info("BCN: PreferNextAddressRequest params:%s" %(params))
             
