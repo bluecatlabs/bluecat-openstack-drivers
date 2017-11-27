@@ -1,0 +1,23 @@
+===============================
+Bluecat Neutron Driver
+===============================
+
+Updates Openstack Neutron driver to send IPAM information to BlueCat Address Manager
+
+* Free software: Apache license
+
+Overview
+--------
+
+
+
+Devstack Installation
+---------------------
+
+xxxx
+
+
+
+
+
+
