@@ -1,8 +1,8 @@
 # BlueCat Openstack
 
-===============================
+
 Bluecat Neutron Monitor
-===============================
+
 
 Contains a monitor service which listens for Openstack Neutron floating-IP event messages and updates Bluecat DNS
 
@@ -68,9 +68,9 @@ GROUP="stack"
 sudo update-rc.d bluecat_neutron_monitor defaults
 sudo service bluecat_neutron_monitor start [stop|restart|status]
 
-===============================
+
 Bluecat Nova Monitor
-===============================
+
 
 Contains a monitor service which listens for Openstack nova event messages and updates Bluecat DNS
 
