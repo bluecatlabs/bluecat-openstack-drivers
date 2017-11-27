@@ -1,8 +1,9 @@
 # BlueCat Openstack
 
+* Free software: Apache license
 
 Bluecat Neutron Monitor
-
+-----------------------
 
 Contains a monitor service which listens for Openstack Neutron floating-IP event messages and updates Bluecat DNS
 
@@ -70,7 +71,7 @@ sudo service bluecat_neutron_monitor start [stop|restart|status]
 
 
 Bluecat Nova Monitor
-
+--------------------
 
 Contains a monitor service which listens for Openstack nova event messages and updates Bluecat DNS
 
