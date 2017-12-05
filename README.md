@@ -5,6 +5,12 @@ The BlueCat OpenStack example integration consists of three Python-based compone
 - The BlueCat OpenStack Nova monitor, which sends OpenStack instance FQDNs (A,AAAA and PTRs) to a Bluecat DNS server (BDDS) dynamically, which then updates the DNS records within Bluecat Address Manager™ (BAM) added by the neutron driver
 - The Bluecat Neutron monitor, which sends floating IP assignment updates (A,AAAA and PTRs) to Bluecat DNS server dynamically, which then updates the DNS records within Bluecat Address Manager™ (BAM) added by the OpenStack Nova Monitor
 
+<object data="bluecat openstack diagram.pdf" type="application/pdf" width="700px" height="700px">
+    <embed src="bluecat openstack diagram.pdf">
+    </embed>
+</object>
+
+
 ## Installation
 All development has taken place against DevStack (upon Ubuntu 16.10), installation directly onto production OpenStack Neutron and Nova nodes should be tested and validated independently
 
