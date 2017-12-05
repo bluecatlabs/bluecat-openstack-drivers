@@ -10,7 +10,7 @@ The BlueCat OpenStack example integration consists of three Python-based compone
 ## Installation
 All development has taken place against DevStack (upon Ubuntu 16.10), installation directly onto production OpenStack Neutron and Nova nodes should be tested and validated independently
 
-##### On BlueCat Address Manager™ (BAM)
+#### On BlueCat Address Manager™ (BAM)
 
 - Create a new Configuration for OpenStack updates, for example `OpenStack`
 
@@ -40,7 +40,7 @@ All development has taken place against DevStack (upon Ubuntu 16.10), installati
 
 Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically created if not already present
 
-##### Install the BlueCat Neutron Driver patch
+#### Install the BlueCat Neutron Driver patch
 
 - backup the existing `requests.py` file on the Neutron node
 
@@ -78,7 +78,7 @@ The `driver.py` has the following variables which must be set during installatio
 
 	BAM_DNS_ZONE="bluecat.lab"
 
-##### Configuring the DevStack local.conf
+#### Configuring the DevStack local.conf
 
 Nova and Neutron must be configured to state changes and notifications, the transport_url should be configured to the local rabbitmq instance
 
@@ -96,7 +96,7 @@ Nova and Neutron must be configured to state changes and notifications, the tran
 	transport_url = rabbit://stackrabbit:stackqueue@192.168.1.70:5672/
 	notification_driver = messagingv2
 
-##### Installing the Bluecat Nova Monitor
+#### Installing the Bluecat Nova Monitor
 
 Copy the `bluecat_nova_monitor.py` to a suitable location (such as `/opt/stack/devstack/bluecat`)
 
@@ -126,7 +126,7 @@ Start the Bluecat Nova Monitor service
 	sudo service bluecat_nova_monitor start 
 
 
-##### Installing the Bluecat Neutron Monitor
+#### Installing the Bluecat Neutron Monitor
 
 Copy the `bluecat_neutron_monitor.py` to a suitable location (such as `/opt/stack/devstack/bluecat`)
 
