@@ -230,7 +230,13 @@ Sets the TTL of the records added to DNS (Default 1)
 Sets a domain name to append to the Nova instance name, if this parameter isn't passed the driver uses the instance as a FQDN
 
 ## Contributions
-Contributing follows a review process: before a update is accepted it will be reviewed and then merged into the master branch. 
+Contributing follows a review process: before a update is accepted it will be reviewed and then merged into the master branch.
+
+1. Fork it!
+2. Create your feature branch: git checkout -b my-new-feature
+3. Commit your changes: git commit -am 'Add some feature'
+4. Push to the branch: git push origin my-new-feature
+5. Submit a pull request 
 
 ## Credits
 The OpenStack example integration would not have been possible without the work of the following people. 
