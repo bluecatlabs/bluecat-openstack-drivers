@@ -1,4 +1,4 @@
-# BlueCat OpenStack Example Integration
+# BlueCat OpenStack Integration
 The BlueCat OpenStack example integration consists of three Python-based components: 
 
 - The BlueCat OpenStack Neutron driver patch, which documents OpenStack subnets,ports and compute instances as they are provisioned within BlueCat Address Manager™ (BAM)
