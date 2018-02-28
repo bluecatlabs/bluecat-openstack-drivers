@@ -42,7 +42,7 @@ All development has taken place against DevStack (upon Ubuntu 16.10), installati
 Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically created if not already present
 
 
-#### Install the BlueCat Neutron Driver patch
+#### Install the BlueCat Neutron Driver patch on DevStack
 
 - backup the existing `requests.py` file on the Neutron node
 
@@ -83,7 +83,7 @@ The `driver.py` has the following variables which must be set during installatio
 
 #### Configuring the DevStack local.conf
 
-Nova and Neutron must be configured to state changes and notifications, the transport_url should be configured to the local rabbitmq instance
+Nova and Neutron must be configured to state changes and notifications, the transport_url should be configured to the local rabbitmq instance, if using devstack add the following additions to the local.conf
 
 	[[post-config|$NOVA_CONF]]
 	[DEFAULT]
