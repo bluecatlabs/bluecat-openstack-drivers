@@ -13,11 +13,13 @@ All development has taken place against DevStack (upon Ubuntu 16.10), installati
 
 #### On BlueCat Address Manager™ (BAM)
 
-- Create a new Configuration for OpenStack updates, for example `OpenStack`
+- Create a new Configuration for OpenStack updates, for example `OpenStack`.
 
-- Ensure that the DNS domain used by OpenStack is defined within the BAM, for example `bluecat.lab`
+- Create an API User, for example openstack in BlueCat and assign it full access rights to the new configuration.
 
-- Ensure there is a primary DNS server deployed for `bluecat.lab`
+- Ensure that the DNS domain used by OpenStack is defined within the BAM, for example `bluecat.lab`.
+
+- Ensure there is a primary DNS server deployed for `bluecat.lab`.
 
 - Create new UDFs for the OpenStack UUIDs:
 
@@ -44,13 +46,14 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 
 #### Install the BlueCat Neutron Driver patch on DevStack
 
-- backup the existing `requests.py` file on the Neutron node
+- Backup the existing requests.py file on the Neutron node in the /opt/neutron/neutron/ipam/ directory.
 
-- Copy the `requests.py` to the `/opt/neutron/neutron/ipam/` directory
+- Backup the existing driver.py file on the Neutron node in the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory.
 
-- backup the existing `driver.py` file on the Neutron node
+- Copy the new requests.py to the /opt/neutron/neutron/ipam/ directory.
 
-- Copy the `requests.py` to the `/opt/neutron/neutron/ipam/drivers/neutrondb_ipam` directory
+- Copy the new driver.py to the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory, taking care not to  overwrite /opt/stack/neuron/neutron/driver/driver.py. 
+
 
 The `driver.py` has the following variables which must be set during installation within the python source:
 
