@@ -66,9 +66,7 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 Edit 'driver.ini' as required for your environment:
 
 	[BAM]
-	
 	bam_address=192.168.1.100
-	
 	bam_api_user=openstack
 	bam_api_pass=openstack
 	bam_config_name=OpenStack
