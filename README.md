@@ -48,13 +48,13 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 
 #### Install the BlueCat Neutron Driver patch on DevStack
 
-- Backup the existing requests.py file on the Neutron node in the /opt/neutron/neutron/ipam/ directory.
+- Backup the existing requests.py file on the Neutron node in the /opt/stack/neutron/neutron/ipam/ directory.
 
-- Backup the existing driver.py file on the Neutron node in the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory.
+- Backup the existing driver.py file on the Neutron node in the /opt/stack/neutron/neutron/ipam/drivers/neutrondb_ipam directory.
 
-- Copy the new requests.py to the /opt/neutron/neutron/ipam/ directory.
+- Copy the new requests.py to the /opt/stack/neutron/neutron/ipam/ directory.
 
-- Copy the new driver.py to the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory, taking care not to  overwrite /opt/stack/neuron/neutron/driver/driver.py. 
+- Copy the new driver.py to the /opt/stack/neutron/neutron/ipam/drivers/neutrondb_ipam directory, taking care not to  overwrite /opt/stack/neutron/neutron/driver/driver.py. 
 
 - Copy the new driver.ini to the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory.
 
