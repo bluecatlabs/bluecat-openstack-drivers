@@ -44,6 +44,8 @@ All development has taken place against DevStack (upon Ubuntu 16.10), installati
 Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically created if not already present
 
 
+
+
 #### Install the BlueCat Neutron Driver patch on DevStack
 
 - Backup the existing requests.py file on the Neutron node in the /opt/neutron/neutron/ipam/ directory.
@@ -54,33 +56,49 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 
 - Copy the new driver.py to the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory, taking care not to  overwrite /opt/stack/neuron/neutron/driver/driver.py. 
 
+- Copy the new driver.ini to the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory.
+
+
+#### Configure The BlueCat OpenStack driver
+
+##### For version V0.13 and above
+
+Edit 'driver.ini' as required for your environment:
+
+[BAM]
+bam_address=192.168.1.100
+bam_api_user=openstack
+bam_api_pass=openstack
+bam_config_name=OpenStack
+bam_ipv4_public_block=10.0.0.0/8
+bam_ipv4_private_block=192.168.1.0/24
+bam_ipv4_private_network=192.168.1.0/26
+bam_ipv4_private_iprange_startip=192.168.1.2
+bam_ipv4_private_iprange_endip=192.168.1.62
+bam_ipv4_private_iprange_gw=192.168.1.254
+bam_ipv6_public_block=2000::/3
+bam_ipv6_private_block=FC00::/6
+bam_dns_zone=bluecat.lab
+bam_updatemodify_networks=True
+
+
+
+##### For versions up to V0.12
 
 The `driver.py` has the following variables which must be set during installation within the python source:
 
 	BAM_ADDRESS="192.168.1.100"
-
 	BAM_API_USER="openstack"
-
 	BAM_API_PASS="openstack"
-
 	BAM_CONFIG_NAME="OpenStack"
-
 	BAM_IPV4_PUBLIC_BLOCK="10.0.0.0/8"
-
 	BAM_IPV4_PRIVATE_BLOCK="192.168.1.0/24"
-
 	BAM_IPV4_PRIVATE_NETWORK="192.168.1.0/26"
-
 	BAM_IPV4_PRIVATE_IPRANGE_STARTIP="192.168.1.2"
-
 	BAM_IPV4_PRIVATE_IPRANGE_ENDIP="192.168.1.62"
-
 	BAM_IPV4_PRIVATE_IPRANGE_GW="192.168.1.254"
-
 	BAM_IPV6_PUBLIC_BLOCK="2000::/3"
-
 	BAM_IPV6_PRIVATE_BLOCK="FC00::/6"
-
 	BAM_DNS_ZONE="bluecat.lab"
 
 

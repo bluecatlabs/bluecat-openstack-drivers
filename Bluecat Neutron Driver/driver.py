@@ -15,6 +15,9 @@
 
 # DH
 # V0.11  20171127
+# V0.12  20180307	- Removed hardcoded configuration reference.
+#					- Added flag to toggle updates/deletion of networks in BAM
+# Pike_V0.13  20180314	- Moved BlueCat config options to a config file.
 
 import itertools
 import random
@@ -42,43 +45,16 @@ from suds.client import Client
 from suds import WebFault
 from suds.transport.http import HttpAuthenticated
 from pip._vendor.ipaddress import ip_address
+from configparser import ConfigParser
 
 LOG = log.getLogger(__name__)
 
 
-BAM_ADDRESS='172.16.29.10'
-BAM_API_USER='admin01'
-BAM_API_PASS='password'
-BAM_CONFIG_NAME='OpenStack'
-BAM_IPV4_PUBLIC_BLOCK="172.16.0.0/8"
-BAM_IPV4_PRIVATE_BLOCK="10.0.0.0/8"
-BAM_IPV4_PRIVATE_NETWORK="10.0.0.0/26"
-BAM_IPV4_PRIVATE_IPRANGE_STARTIP="10.0.0.2"
-BAM_IPV4_PRIVATE_IPRANGE_ENDIP="10.0.0.62"
-BAM_IPV4_PRIVATE_IPRANGE_GW="10.0.0.1"
-BAM_IPV6_PUBLIC_BLOCK="2000::/3"
-BAM_IPV6_PRIVATE_BLOCK="FC00::/6"
-BAM_DNS_ZONE="lab2.com"
-
-def _bam_login():
-   LOG.info("BCN: Connecting to BAM at %s ..." % BAM_ADDRESS )
-   soap_client = Client('http://%s/Services/API?wsdl' % BAM_ADDRESS)
-   soap_client.service.login(BAM_API_USER, BAM_API_PASS)
-   return soap_client
+BC_configFileName="/opt/stack/neutron/neutron/ipam/drivers/neutrondb_ipam/driver.ini"
 
 
-def _bam_logout(soap_client):
-   LOG.info("BCN: Disconnecting from BAM at %s ..." % BAM_ADDRESS )
-   soap_client.service.logout()
-
-
-def _get_bam_configid(soap_client):
-   config = soap_client.service.getEntityByName(0, BAM_CONFIG_NAME, 'Configuration')
-   configID = long(config['id'])
-   LOG.info("BCN: Got configID %d" % (configID))
-   return configID
-
-
+   
+    
 class NeutronDbSubnet(ipam_base.Subnet):
     """Manage IP addresses for Neutron DB IPAM driver.
 
@@ -262,9 +238,12 @@ class NeutronDbSubnet(ipam_base.Subnet):
                 subnet_id=self.subnet_manager.neutron_id)
 
         ipObj = netaddr.IPAddress(ip_address)
-
-        soap_client = _bam_login()
-        configID = _get_bam_configid(soap_client)
+        
+        # BlueCat additions
+        paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+        
+        soap_client = _bam_login(paramsBAM)
+        configID = _get_bam_configid(paramsBAM, soap_client)
 
         LOG.info("BCN: Creating host %s in BAM  ..." % (ip_address))
 
@@ -293,7 +272,7 @@ class NeutronDbSubnet(ipam_base.Subnet):
         else:
             createBCPI6Obj(ip_address, hostName, id, mac, configID, soap_client)        
 
-        _bam_logout(soap_client)
+        _bam_logout(paramsBAM, soap_client)
         return ip_address
 
 
@@ -310,11 +289,13 @@ class NeutronDbSubnet(ipam_base.Subnet):
                 ip_address=address)
 
         ipObj = netaddr.IPAddress(address)
-
+        
+        # BlueCat additions
         LOG.info("BCN: Deallocating IP address %s" % (address))
-    
-        soap_client = _bam_login()
-        configID = _get_bam_configid(soap_client)
+        
+        paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+        soap_client = _bam_login(paramsBAM)
+        configID = _get_bam_configid(paramsBAM, soap_client)
     
         LOG.info("BCN: Deleting host %s from BAM ..." % (address))
         if ipObj.version == 4:
@@ -322,7 +303,7 @@ class NeutronDbSubnet(ipam_base.Subnet):
         else:
                 delBCIP6Obj(address, configID, soap_client)
     
-        _bam_logout(soap_client)
+        _bam_logout(paramsBAM, soap_client)
 
 
     def _no_pool_changes(self, context, pools):
@@ -349,12 +330,6 @@ class NeutronDbSubnet(ipam_base.Subnet):
             self._tenant_id, self.subnet_manager.neutron_id,
             self._cidr, self._gateway_ip, self._pools)
 
-# DMH
-    @staticmethod
-    def dumpObj(descr, logFile, obj):
-        logFile.write("Name : %s\n" % (descr))
-        pprint(getmembers(obj), logFile)
-        logFile.write("\n")
     
 
 class NeutronDbPool(subnet_alloc.SubnetAllocator):
@@ -382,6 +357,8 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         :returns: a NeutronDbSubnet instance
         """
 
+        paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+
         if self._subnetpool:
             tmpName = subnet_request.name
 
@@ -399,14 +376,15 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
             subnet_request = ipam_req.SpecificSubnetRequest(
                             subnet_request._tenant_id,
                             subnet_request._subnet_id,
-                            BAM_IPV4_PRIVATE_NETWORK,
-                            allocation_pools=[netaddr.IPRange(BAM_IPV4_PRIVATE_IPRANGE_STARTIP, BAM_IPV4_PRIVATE_IPRANGE_ENDIP)],
-                            gateway_ip=BAM_IPV4_PRIVATE_IPRANGE_GW
+                            paramsBAM['bam_ipv4_private_network'],
+                            allocation_pools=[netaddr.IPRange(paramsBAM['bam_ipv4_private_iprange_startip'], paramsBAM['bam_ipv4_private_iprange_endip'])],
+                            gateway_ip=paramsBAM['bam_ipv4_private_iprange_gw']
                             )
+                            
+        #  BlueCat additions
+        soap_client = _bam_login(paramsBAM)
 
-        soap_client = _bam_login()
-
-        config = soap_client.service.getEntityByName(0, "OpenStack", 'Configuration')
+        config = soap_client.service.getEntityByName(0, paramsBAM['bam_config_name'], 'Configuration')
         configID = config['id']
         LOG.info("BCN: Got configID %s" % (configID))
 
@@ -422,25 +400,25 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
 
         # This needs polishing ...
         parentBlockId = ""        
-        tenNet= netaddr.IPNetwork(BAM_IPV4_PRIVATE_BLOCK)
+        tenNet= netaddr.IPNetwork(paramsBAM['bam_ipv4_private_block'])
 
         if str(subnet_request._subnet_cidr.ip) in tenNet:
-            parentBlockId = apiGetBlockID( configID, BAM_IPV4_PRIVATE_BLOCK, blockType)
+            parentBlockId = apiGetBlockID( configID, paramsBAM['bam_ipv4_private_block'], blockType)
         elif str(subnet_request._subnet_cidr.version) == "6":
-            IP6GlobalUni = netaddr.IPNetwork(BAM_IPV6_PUBLIC_BLOCK)
-            IP6UniqLocal = netaddr.IPNetwork(BAM_IPV6_PRIVATE_BLOCK)
+            IP6GlobalUni = netaddr.IPNetwork(paramsBAM['bam_ipv6_public_block'])
+            IP6UniqLocal = netaddr.IPNetwork(paramsBAM['bam_ipv6_private_block'])
 
             if subnet_request._subnet_cidr.ip in IP6UniqLocal:
-                LOG.info("BCN: Getting "+BAM_IPV6_PRIVATE_BLOCK +" blockID ...")
-                parentBlockId = apiGetBlockID(configID, BAM_IPV6_PRIVATE_BLOCK, blockType)
+                LOG.info("BCN: Getting "+paramsBAM['bam_ipv6_private_block'] +" blockID ...")
+                parentBlockId = apiGetBlockID(configID, paramsBAM['bam_ipv6_private_block'], blockType)
             elif subnet_request._subnet_cidr.ip in IP6GlobalUni:
-                    LOG.info("BCN: Getting " +BAM_IPV6_PUBLIC_BLOCK +"blockID ...")
-                    parentBlockId = apiGetBlockID(configID, BAM_IPV6_PUBLIC_BLOCK, blockType)
+                    LOG.info("BCN: Getting " +paramsBAM['bam_ipv6_public_block'] +"blockID ...")
+                    parentBlockId = apiGetBlockID(configID, paramsBAM['bam_ipv6_public_block'], blockType)
             else:
                     LOG.error("BCN: [Error] : Unsupported IPv6 Address Range: %s"  % (subnet_request._subnet_cidr.ip))
         else:
-            LOG.info("BCN: IP4Block : " +BAM_IPV4_PUBLIC_BLOCK)
-            parentBlockId = apiGetBlockID(configID, BAM_IPV4_PUBLIC_BLOCK, blockType)
+            LOG.info("BCN: IP4Block : " +paramsBAM['bam_ipv4_public_block'])
+            parentBlockId = apiGetBlockID(configID, paramsBAM['bam_ipv4_public_block'], blockType)
 
         LOG.info("BCN: parentBlockId = %s"  % (parentBlockId))
 
@@ -450,6 +428,8 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         bcNetID = addBCNetwork(parentBlockId, cidr, subnet_request.name, subnet_request._subnet_id, str(subnet_request._subnet_cidr.version))
 
         LOG.info("BCN: Network Added, NetworkId = %s, Name = %s UUID = %s\n" % (bcNetID, subnet_request.name, subnet_request._subnet_id))
+        
+        _bam_logout(paramsBAM, soap_client)
 
         return NeutronDbSubnet.create_from_subnet_request(subnet_request,
                                                           self._context)
@@ -475,16 +455,20 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         cidr = netaddr.IPNetwork(subnet._cidr)
         subnet.update_allocation_pools(subnet_request.allocation_pools, cidr)
         
-        soap_client = _bam_login()
-        configID = _get_bam_configid(soap_client)
-        LOG.info("BCN: Got configID %s" % (configID))
+        # BlueCat additions
+        paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+        
+        if (bam_updatemodify_networks== "True"):        
+			soap_client = _bam_login(paramsBAM)
+			configID = _get_bam_configid(paramsBAM, soap_client)
+			LOG.info("BCN: Got configID %s" % (configID))
 
-        cidr = str(subnet_request._subnet_cidr.ip) +"/" +str(subnet_request._subnet_cidr.prefixlen)
+			cidr = str(subnet_request._subnet_cidr.ip) +"/" +str(subnet_request._subnet_cidr.prefixlen)
 
-        LOG.info("BCN: Updating Network %s %s in BAM  ...\n" % (cidr, subnet_request.name))
+			LOG.info("BCN: Updating Network %s %s in BAM  ...\n" % (cidr, subnet_request.name))
 
-        updateBCNetwork(soap_client, configID, cidr, subnet_request.name, subnet_request.subnet_id)
-        soap_client.service.logout()
+			updateBCNetwork(soap_client, configID, cidr, subnet_request.name, subnet_request.subnet_id)
+			_bam_logout(paramsBAM, soap_client)
         
         return subnet
 
@@ -503,14 +487,19 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
                           "Neutron subnet %s does not exist"),
                       subnet_id)
             raise n_exc.SubnetNotFound(subnet_id=subnet_id)
+            
+        # BlueCat additions
+        paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+            
+        if (paramsBAM['bam_updatemodify_networks'] == "True"):    
+			soap_client = _bam_login(paramsBAM)
+			configID = _get_bam_configid(paramsBAM, soap_client)
+			LOG.info("BCN: Got configID %s" % (configID))
 
-        soap_client = _bam_login()
-        configID = _get_bam_configid(soap_client)
-        LOG.info("BCN: Got configID %s" % (configID))
+			LOG.info("BCN: Removing Network %s from BAM  ...\n" % (subnet_id))
 
-        LOG.info("BCN: Removing Network %s from BAM  ...\n" % (subnet_id))
-
-        delBCNetwork(configID, subnet_id)
+			delBCNetwork(configID, subnet_id)
+			_bam_logout(paramsBAM, soap_client)
 
 
     def needs_rollback(self):
@@ -519,13 +508,6 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
 
 # ----------------------- Bluecat API Routines ------------------
 
-# DMH
-    @staticmethod
-    def dumpObj(descr, logFile, obj):
-
-        logFile.write("BCN: Name : %s\n" % (descr))
-        pprint(getmembers(obj), logFile)
-        logFile.write("\n")
     
     
     #----------- getItemsFromResponse
@@ -579,133 +561,67 @@ def getValueFromDataStr(dataStr, counter):
     return(value)
     
 
-def apiLogin(conn):
-
-    headersLogin = {
-        'cache-control': "no-cache",
-        'postman-token': "0888ac7f-c859-ff92-46ae-72a0e23a3244"
-        }
-
-    conn.request("GET", "/Services/REST/v1/login?username=api&password=coolbeans", headers=headersLogin)
-
-    res = conn.getresponse()
-    data = res.read()
-    #print(data.decode("utf-8"))
-
-    tokenDataLine = data.decode("utf-8")
-    #print (tokenDataLine)
-
-    tokenDataWords = tokenDataLine.split()
-    tokenData = tokenDataWords[2] +" " +tokenDataWords[3]
-
-    #print (tokenData)
-    return (tokenData)
+def _bam_login(paramsBAM):
+   LOG.info("BCN: Connecting to BAM at %s ..." % paramsBAM['bam_address'] )
+   soap_client = Client('http://%s/Services/API?wsdl' % paramsBAM['bam_address'])
+   soap_client.service.login(paramsBAM['bam_api_user'], paramsBAM['bam_api_pass'])
+   return soap_client
 
 
-#----------- apiGetConfigurationID
-def apiGetConfigurationID(conn, tokenData, configName):
+def _bam_logout(paramsBAM, soap_client):
+   LOG.info("BCN: Disconnecting from BAM at %s ..." % paramsBAM['bam_address'] )
+   soap_client.service.logout()
 
-    headers = {
-        'authorization': tokenData,
-        'cache-control': "no-cache",
-        'postman-token': "ffe2655d-439d-cb40-15e2-cc193fb75230"
-        }
 
-    requestStr = "/Services/REST/v1/getEntityByName?parentId=0&name="
-    requestStr += configName
-    requestStr += "&type=Configuration"
-        
-    conn.request("GET", requestStr, headers=headers)
+def _get_bam_configid(paramsBAM, soap_client):
+   config = soap_client.service.getEntityByName(0, paramsBAM['bam_config_name'], 'Configuration')
+   configID = long(config['id'])
+   LOG.info("BCN: Got configID %d" % (configID))
+   return configID
 
-    res = conn.getresponse()
-    data = res.read()
+
+def getBCNConfig(configFileName, section):
+    # create a parser
+    parser = ConfigParser()
+    # read config file
+    parser.read(configFileName)
+ 
+    # get section, default to postgresql
+    db = {}
+    if parser.has_section(section):
+        params = parser.items(section)
+        for param in params:
+            db[param[0]] = param[1]
+    else:
+        raise Exception('Section {0} not found in the {1} file'.format(section, configFileName))
+ 
+    return db
     
-    print(data.decode("utf-8"))
     
-    fields = getItemsFromResponse(data)
-    id = getValueFromDataStr(fields, 0)
-    
-    # Need to logout !
-
-    return(id)
-    
-
 #----------- apiGetBlockID
 def apiGetBlockID(parentID, cidr, blockType):
 
     fields = cidr.split('/')
     addr = fields[0]
-    mask = fields[1]
+    mask = fields[1]    
     
-    soap_client = _bam_login()
-    configID = _get_bam_configid(soap_client)
+    paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+    soap_client = _bam_login(paramsBAM)
+    configID = _get_bam_configid(paramsBAM, soap_client)
 
     parent = soap_client.service.getIPRangedByIP ( configID, blockType, addr)
     id = parent['id']  
-    soap_client.service.logout()
+    _bam_logout(paramsBAM, soap_client)
 
     return(id)
 
-
-def apiGetBlockID_old(conn, tokenData, parentID, cidr, blockType):
-
-    fields = cidr.split('/')
-    addr = fields[0]
-    mask = fields[1]
-
-    headers = {
-        'authorization': tokenData,
-        'cache-control': "no-cache",
-        'postman-token': "412301d3-4361-d2df-b1cc-b0666d147cc6"
-        }
-
-    logFile2 = open("/tmp/stack.log", "a")
-
-
-    requestStr = ""
-    if str(blockType) == "IP4Block":
-        requestStr = "/Services/REST/v1/getEntityByCIDR?parentId="
-        requestStr += parentID
-        requestStr += "&cidr="
-        requestStr += addr
-        requestStr += "%2F"
-        requestStr += mask
-        requestStr += "&type="
-        requestStr += blockType
-    else:
-        requestStr = "/Services/REST/v1/getEntityByPrefix?parentId="
-        requestStr += parentID
-        requestStr += "&cidr="
-        requestStr += addr
-        #requestStr += "%2F"
-        #requestStr += mask
-        requestStr += "&type="
-        requestStr += blockType
-
-    #print(requestStr)
-
-    logFile2.write("requestStr: %s\n" % (requestStr))
-
-    conn.request("GET", requestStr, headers=headers)
-
-    res = conn.getresponse()
-    data = res.read()
-
-    #print(data.decode("utf-8"))
-    
-    fields = getItemsFromResponse(data)
-    id = getValueFromDataStr(fields, 0)
-
-    logFile2.write("Rtn : id: %s\n" % (id))
-    logFile2.close()
-
-    return(id)
 
 
 def addBCNetwork(parentID, cidr, subnet_name, subnet_id, version):
 
-    # set wsdl location
-    soap_client = _bam_login()
+    # set wsdl location    
+    paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+    soap_client = _bam_login(paramsBAM)
     
     properties=""
     if subnet_name == None:
@@ -763,8 +679,8 @@ def addBCNetwork(parentID, cidr, subnet_name, subnet_id, version):
         LOG.info("BCN: Creating IPv6 Net: %s, subnet_name: %s, properties: %s, parentID: %s ..." % (cidr, subnet_name, properties, parentID))
         #LOG.info("pass addIP6NetworkByPrefix: pID: %s cidr: %s sName: %s props :%s" %(parentID,  cidr, subnet_name, properties))
         netid = soap_client.service.addIP6NetworkByPrefix(parentID,  cidr, subnet_name, properties)
-
-    soap_client.service.logout()
+        
+        _bam_logout(paramsBAM, soap_client)
 
     return(netid)
 
@@ -773,12 +689,13 @@ def delBCNetwork(configID, subnet_id):
     # Currently only does IPv4 User networks
 
      # Really this needs to search each IPv4 and IPv6 TL block and only then report an error if the 
-    # subnet_id (name) is still not found 
-    soap_client = _bam_login()
+    # subnet_id (name) is still not found     
+    paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+    soap_client = _bam_login(paramsBAM)
     
     # This needs expanding to search each IP4 and IP6 block to find the relevant network to delete.
     LOG.info("BCN: Getting ParentBlockID Info  ...")
-    parentBlockId = apiGetBlockID(configID, BAM_IPV4_PUBLIC_BLOCK, "IP4Block")
+    parentBlockId = apiGetBlockID(configID, paramsBAM['bam_ipv4_private_block'], "IP4Block")
     value = ""
     # get child nets
     # Needs expanding to search all Ipv4 and IPv6 TL blocks, but currently I am only working in one. 
@@ -804,8 +721,8 @@ def delBCNetwork(configID, subnet_id):
         LOG.info("BCN: Network Removed : Name = %s, UUID = %s"  % (name, subnet_id))
     else:
         LOG.warning("BCN: NetworkID not found for network %s - Skipping ..." % (subnet_id))
-
-    soap_client.service.logout()
+        
+    _bam_logout(paramsBAM, soap_client)
 
 
 def updateBCNetwork(soap_client, configID, netCIDR, newNetName, newUUID):
@@ -860,8 +777,9 @@ def createBCIP4Obj(ipAddr, hostName, uuid, mac, configID, soap_client):
         return
 
     LOG.info("BCN: Creating host %s in BAM  ..." % (ipAddr))
+    paramsBAM = getBCNConfig(BC_configFileName, "BAM")
     properties = "name=" +hostName +"|UUID=" +uuid  
-    hostInfo = hostName +"." +BAM_DNS_ZONE +"," +str(viewID) +",false,false" 
+    hostInfo = hostName +"." +paramsBAM['bam_dns_zone'] +"," +str(viewID) +",false,false" 
     hostID = soap_client.service.assignIP4Address(long(configID), ipAddr, mac, hostInfo, 'MAKE_STATIC', properties)
     LOG.info("BCN: Host Added : hostID = %s, IP = %s"  % (hostID, ipAddr))
 
@@ -874,7 +792,8 @@ def createBCPI6Obj(ipAddr, hostName, uuid, mac, configID, soap_client):
     properties = "name=" +hostName +"|UUID=" +uuid
      
     # Note - this is in a different order to v4.
-    hostInfo = str(viewID) +"," +hostName +"." +BAM_DNS_ZONE +",false,false" 
+    paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+    hostInfo = str(viewID) +"," +hostName +"." +paramsBAM['bam_dns_zone'] +",false,false" 
     LOG.info("BCN: IP6Obj hostInfo = %s" % (hostInfo))
 
     hostID = soap_client.service.assignIP6Address(long(configID), ipAddr, 'MAKE_STATIC', mac, hostInfo, properties)
@@ -882,7 +801,7 @@ def createBCPI6Obj(ipAddr, hostName, uuid, mac, configID, soap_client):
 
 
 # Currently this is only used to update existing objects when the stack starts (ie called from update_subnet),
-# there is currently no 'update_port' type call in the reference driver (See portUpdateMonitor.py)
+# at the time of writing there is no 'update_port' type call in the reference driver (See portUpdateMonitor.py)
 def updateIP4Obj(ipAddr, newName, uuid, configID, soap_client):
 
     LOG.info("BCN: Getting ViewID Info  ...")
@@ -912,9 +831,9 @@ def updateIP4Obj(ipAddr, newName, uuid, configID, soap_client):
    
     LOG.info ("BCN: Updating Object ...")
     soap_client.service.update(ipObj)
-    
+    paramsBAM = getBCNConfig(BC_configFileName, "BAM")
     rrID = ""
-    newNameFQDN = newName +"." +BAM_DNS_ZONE
+    newNameFQDN = newName +"." +paramsBAM['bam_dns_zone']
 
     linkedEntities = soap_client.service.getLinkedEntities(ipID, "HostRecord", 0, 1000)
     for linkedEntity in linkedEntities:
