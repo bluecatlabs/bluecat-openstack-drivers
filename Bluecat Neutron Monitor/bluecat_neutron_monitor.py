@@ -41,11 +41,14 @@ from kombu import Queue
 from kombu.mixins import ConsumerMixin
 from configparser import ConfigParser
 
+<<<<<<< HEAD
+version = 1.0
+=======
 version = 0.4
+>>>>>>> master
 EXCHANGE_NAME="neutron"
 ROUTING_KEY="notifications.info"
 QUEUE_NAME="bluecat_neutron_monitor"
-BROKER_URI="amqp://guest:guest@localhost:5672//"
 FLOAT_START="floatingip.create.start"
 FLOAT_END="floatingip.create.end"
 FLOAT_U_START="floatingip.update.start"
@@ -68,14 +71,21 @@ monitor_domain_override = config.get('bluecat_neutron_monitor','domain_override'
 monitor_debuglevel = config.get('bluecat_neutron_monitor','debuglevel')
 monitor_replace = config.get('bluecat_neutron_monitor','replace')
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> master
 print 'AMQ URI = ',monitor_broker
 print 'Sending DDNS Updates to BDDS =',monitor_nameserver
 print 'Debug Logging =',monitor_logfile
 print 'Debug Level = ',monitor_debuglevel
 print 'DDNS TTL =',monitor_ttl
 print 'Domain Override',monitor_domain_override
+<<<<<<< HEAD
+print 'Replace Fixed RRs with Floating IP RRs', monitor_replace
+=======
 
+>>>>>>> master
 
 # Set INFO to DEBUG to see the RabbitMQ BODY messages
 log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
@@ -164,13 +174,21 @@ def addFWD(name,ttl,ipaddress):
 	address_type = enumIPtype(ipaddress)
         if address_type == 4:
 		log.debug ('[addFWD] - IPv4')
+<<<<<<< HEAD
+		if monitor_replace == "False":
+=======
 		if monitor_replace == False:
+>>>>>>> master
 			update.add(hostname,monitor_ttl,dns.rdatatype.A, ipaddress)
 		else:
 			update.replace(hostname,monitor_ttl,dns.rdatatype.A, ipaddress)
 	elif address_type == 6:
 		log.debug ('[addFWD] - IPv6')
+<<<<<<< HEAD
+		if monitor_replace == "False":
+=======
 		if monitor_replace == False:
+>>>>>>> master
 			update.add(hostname,monitor_ttl,dns.rdatatype.AAAA, ipaddress)
 		else:
 			update.replace(hostname,monitor_ttl,dns.rdatatype.AAAA, ipaddress)
@@ -284,7 +302,11 @@ class BCUpdater(ConsumerMixin):
  					log.info ('[floatingip.update.end] -> FIXED FQDN = %s' % checkit)
  					log.info ('[floatingip.update.end] -> FLOATING_IP_ADDRESS = %s' % float)
  					log.info ('[floatingip.update.end] -> PORT_ID = %s' % port_id)
+<<<<<<< HEAD
+ 					if monitor_replace == "False":
+=======
  					if options.replace == False:
+>>>>>>> master
 						log.info ('[floatingip.update.end] - Updating DNS - adding FLOATING_IP records')
 					else:
 						log.info ('[floatingip.update.end] - Updating DNS - replacing FIXED_IP records with FLOATING_IP')
