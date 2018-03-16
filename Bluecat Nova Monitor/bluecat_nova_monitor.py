@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2017 Bluecat Networks Inc.
+# Copyright 2018 Bluecat Networks Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -15,11 +15,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# BlueCat Nova Monitor listens on the AMQP message bus of Openstack. 
+# BlueCat Nova Monitor listens on the AMQP message bus of Openstack.
 # Whenever a nova notification message is seen for a compute instance create or delete
 # an RFC2136 DDNS update is sent to the Bluecat DNS defined which updates the A/AAAA and PTR records
-# The bluecat DNS server will forward a notify onto the Bluecat address managed to update the Host Record 
+# The bluecat DNS server will forward a notify onto the Bluecat address managed to update the Host Record
 # added by the Blue Neutron driver (which updates the BAM using the UUID (not hostname)
+
+# B.Shorland - Bluecat Networks 2018
 
 import dns.name
 import dns.message
@@ -40,32 +42,37 @@ from kombu import BrokerConnection
 from kombu import Exchange
 from kombu import Queue
 from kombu.mixins import ConsumerMixin
+from configparser import ConfigParser
 
-version = 0.7
+version = 1.0
 EXCHANGE_NAME="nova"
 ROUTING_KEY="notifications.info"
 QUEUE_NAME="bluecat_nova_monitor"
-BROKER_URI="amqp://guest:guest@localhost:5672//"
 EVENT_CREATE="compute.instance.create.end"
 EVENT_DELETE="compute.instance.delete.start"
 EVENT_UPDATE="compute.instance.update"
 ADDITIONAL_RDCLASS = 65535
 
-# Parse command line arguments
-parser = optparse.OptionParser()
-parser.add_option('-n','--nameserver',dest="nameserver",default="0.0.0.0",)
-parser.add_option('-l','--logfile',dest="logfile",default="/opt/stack/devstack/bluecat/bluecat_nova.log",)
-parser.add_option('-t','--ttl',dest="ttl",type=int,default=1,)
-parser.add_option('-d','--domain',dest="domain",default=False,)
-options, remainder = parser.parse_args()
-print 'Sending DDNS Updates to BDDS =',options.nameserver
-print 'Debug Logging =',options.logfile
-print 'DDNS TTL =',options.ttl
-print 'Domain =',options.domain
+# read in bluecat.conf configuration settings
 
+config = ConfigParser()
+config.read('bluecat.conf')
+monitor_broker = config.get('bluecat_nova_monitor','broker_uri')
+monitor_nameserver = config.get('bluecat_nova_monitor', 'nameserver')
+monitor_logfile = config.get('bluecat_nova_monitor', 'logfile')
+monitor_ttl = config.get('bluecat_nova_monitor', 'ttl')
+monitor_domain_override = config.get('bluecat_nova_monitor','domain_override')
+monitor_debuglevel = config.get('bluecat_nova_monitor','debuglevel')
 
-# Set INFO to DEBUG to see the RabbitMQ BODY messages 
-log.basicConfig(filename=options.logfile, level=log.INFO, format='%(asctime)s %(message)s')
+print 'AMQ URI = ',monitor_broker
+print 'Sending DDNS Updates to BDDS =',monitor_nameserver
+print 'Debug Logging =',monitor_logfile
+print 'Debug Level = ',monitor_debuglevel
+print 'DDNS TTL =',monitor_ttl
+print 'Domain Override',monitor_domain_override
+
+# Set INFO to DEBUG to see the RabbitMQ BODY messages
+log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
 
 def stripptr(substr, str):
         index = 0
@@ -84,7 +91,7 @@ def getrevzone_auth(domain):
 	request = dns.message.make_query(domain, dns.rdatatype.ANY)
 	request.flags |= dns.flags.AD
 	request.find_rrset(request.additional, dns.name.root, ADDITIONAL_RDCLASS, dns.rdatatype.OPT, create=True, force_unique=True)
-	response = dns.query.udp(request, options.nameserver)
+	response = dns.query.udp(request, monitor_nameserver)
 	if not response.authority:
 		log.debug ('[getrevzone_auth] - DNS not authoritive')
 		return
@@ -105,8 +112,8 @@ def addREV(ipaddress,ttl,name):
 	name = name + '.'
 	log.debug ('[addREV] - name %s' % name)
 	update = dns.update.Update(authdomain)
-	update.replace(label,ttl,dns.rdatatype.PTR, name)
-	response = dns.query.tcp(update, options.nameserver)
+	update.replace(label,monitor_ttl,dns.rdatatype.PTR, name)
+	response = dns.query.tcp(update, monitor_nameserver)
 	return response
 
 # Delete PTR record for a passed address
@@ -120,10 +127,10 @@ def delREV(ipaddress):
 	label = stripptr(authdomain, reversedomain)
 	log.debug ('[delREV] - label  %s' % label)
 	update.delete(label,'PTR')
-	response = dns.query.tcp(update, options.nameserver)
+	response = dns.query.tcp(update, monitor_nameserver)
 	return response
 
-# add A/AAAA record 
+# add A/AAAA record
 def addFWD(name,ttl,ipaddress):
 	ipaddress = str(ipaddress)
 	update = dns.update.Update(splitFQDN(name)[1])
@@ -132,12 +139,12 @@ def addFWD(name,ttl,ipaddress):
 	log.debug ('[addFWD] - domain %s' % splitFQDN(name)[1])
 	address_type = enumIPtype(ipaddress)
         if address_type == 4:
-		log.debug ('[addFWD] - IPv4') 
-		update.add(hostname,ttl,dns.rdatatype.A, ipaddress)
+		log.debug ('[addFWD] - IPv4')
+		update.add(hostname,monitor_ttl,dns.rdatatype.A, ipaddress)
 	elif address_type == 6:
 		log.debug ('[addFWD] - IPv6')
-		update.add(hostname,ttl,dns.rdatatype.AAAA, ipaddress)	
-	response = dns.query.udp(update, options.nameserver)
+		update.add(hostname,monitor_ttl,dns.rdatatype.AAAA, ipaddress)
+	response = dns.query.udp(update, monitor_nameserver)
 	return response
 
 # Resolve AAAA record from name, returns address
@@ -150,46 +157,46 @@ def delFWD(name):
 	log.debug ('[delFWD] - domainname %s' % domain)
 	update.delete(hostname, 'A')
 	update.delete(hostname, 'AAAA')
-	response = dns.query.tcp(update, options.nameserver)
+	response = dns.query.tcp(update, monitor_nameserver)
 	return response
-		
+
 # Resolve A record from name, returns address
 def resolveA(name):
 	myResolver = dns.resolver.Resolver()
-	myResolver.nameservers = [options.nameserver]
+	myResolver.nameservers = [monitor_nameserver]
 	try:
 		myAnswers = myResolver.query(name, dns.rdatatype.A)
 	except dns.exception.DNSException:
 		log.debug ('[resolveA] - Exception %s' % dns.exception.DNSException)
-		return 
-	alist = []	
+		return
+	alist = []
 	for rr in myAnswers.response.answer:
 		for a in rr:
 			log.debug ('[resolveA] - %s' % a.address)
 			alist.append (a.address)
 		return alist
-	return 
-	
+	return
+
 
 # Resolve AAAA record from name, returns address
 def resolveAAAA(name):
 	myResolver = dns.resolver.Resolver()
-	myResolver.nameservers = [options.nameserver]
+	myResolver.nameservers = [monitor_nameserver]
 	try:
 		myAnswers = myResolver.query(name, dns.rdatatype.AAAA)
 	except dns.exception.DNSException:
 		log.debug ('[resolveAAAA] - Exception %s' % dns.exception.DNSException)
-		return 
+		return
 	alist = []
 	for rr in myAnswers.response.answer:
 		for aaaa in rr:
 			log.debug ('[resolveAAAA] - %s' % aaaa.address)
 			alist.append (aaaa.address)
 		return alist
-	return		
+	return
 
 
-# Resolve PTR record from either IPv4 or IPv6 address 
+# Resolve PTR record from either IPv4 or IPv6 address
 def resolvePTR(address):
 	type = enumIPtype(address)
 	address = str(address)
@@ -203,7 +210,7 @@ def resolvePTR(address):
 		req = '.'.join(reversed(v6address.replace(':',''))) + ".ip6.arpa."
 		log.debug ('[ResolvePTR] - %s' % req)
 	myResolver = dns.resolver.Resolver()
-	myResolver.nameservers = [options.nameserver]
+	myResolver.nameservers = [monitor_nameserver]
 	try:
 		myAnswers = myResolver.query(req, "PTR")
 		for rdata in myAnswers:
@@ -213,7 +220,7 @@ def resolvePTR(address):
 		log.debug ('[ResolvePTR] - PTR query failed')
 		return "PTR Query failed"
 
-# Returns address type 4 or 6 
+# Returns address type 4 or 6
 def enumIPtype(address):
 	address = ipaddress.ip_address(unicode(address))
 	return address.version
@@ -225,7 +232,7 @@ def splitFQDN(name):
 	return hostname,domain
 
 class BCUpdater(ConsumerMixin):
-    
+
     def __init__(self, connection):
         self.connection = connection
         return
@@ -248,17 +255,17 @@ class BCUpdater(ConsumerMixin):
         except Exception, e:
             log.info(repr(e))
 
-# Message handler extracts event_type, hostname, addresses etc. from payload 
+# Message handler extracts event_type, hostname, addresses etc. from payload
     def _handle_message(self, body):
 		log.debug('Body: %r' % body)
 		jbody = json.loads(body['oslo.message'])
 		event_type = jbody['event_type']
 		log.info ('Event Type :- %s' % event_type)
-		
+
 		if event_type in [EVENT_CREATE, EVENT_DELETE]:
 			hostname = jbody['payload']['hostname']
-			
-			if options.domain == False:
+
+			if monitor_domain_override == "False":
 				log.info ('[Payload] - Using INSTANCE as FQDN')
 				log.debug ('[Payload] - INSTANCE %s' % hostname)
 				fqdn = hostname
@@ -267,39 +274,39 @@ class BCUpdater(ConsumerMixin):
 				log.debug ('[Payload] - HOSTNAME %s' % hostname)
 				domain = splitFQDN(fqdn)[1]
 				log.debug ('[Payload] - DOMAIN %s' % domain)
-				
+
 			else:
-			
-				log.info ('[Payload] - Using INSTANCE as hostname {} and appending (-d) domain {} '.format(hostname, options.domain))
+
+				log.info ('[Payload] - Using INSTANCE as hostname {} and appending (-d) domain {} '.format(hostname, monitor_domain_override))
 				log.debug ('[Payload] - HOSTNAME %s' % hostname)
-				domain = options.domain
-				log.debug ('[Payload] - DOMAIN %s' % options.domain)
-				fqdn = hostname + '.' + options.domain
+				domain = monitor_domain_override
+				log.debug ('[Payload] - DOMAIN %s' % monitor_domain_override)
+				fqdn = hostname + '.' + monitor_domain_override
 				log.debug ('[Payload] - FQDN %s'  % fqdn)
-				
+
 			if event_type == EVENT_CREATE:
-			
+
 				for temp in jbody['payload']['fixed_ips']:
 					addr = temp['address']
 					addr = ipaddress.ip_address(unicode(addr))
 					log.info ('[Instance Create] - Adding for Fixed_IP IPv{} Address: {} DNS RRs'.format(addr.version, addr))
-					addFWD(fqdn,options.ttl, addr)
-					addREV(addr,options.ttl, fqdn)
+					addFWD(fqdn,monitor_ttl, addr)
+					addREV(addr,monitor_ttl, fqdn)
 					log.info('[Instance Create] - Completed Update')
-		
+
 			elif event_type == EVENT_DELETE:
 				# Remove PTRs first, resolves the FQDN to the IPs to have PTRs removed
 				log.info('[Instance Delete] - Deleting A/AAAA RRs for {} '.format(fqdn))
-				
+
 				resA = resolveA(fqdn)
 				if resA is not None:
-					for ip in resA: 
+					for ip in resA:
 						log.info ('[Instance Delete] - Deleting PTR for {} {}'.format(ip,fqdn))
 						delREV(ip)
 				elif resA is None:
 					log.debug ("Exception removing...")
 				log.debug ('[Instance Delete] - Removed PTRs for A')
-				
+
 				resAAAA = resolveAAAA(fqdn)
 				if resAAAA is not None:
 					for ip in resAAAA:
@@ -308,27 +315,28 @@ class BCUpdater(ConsumerMixin):
 				elif resAAAA is None:
 					log.debug ("Exception removing...")
 				log.debug ('[Instance Delete] - Removed PTRs for AAAA')
-				
+
 				# Now remove the forward A/AAAA records
 				delFWD(fqdn)
 				log.info('[Instance Delete] - Completed Update')
-		
+
 			elif event_type == EVENT_UPDATE:
 				log.debug ('[Instance Update]...')
-				
-				
+
+
 if __name__ == "__main__":
-	log.info("BlueCat Nova Monitor - %s Bluecat Networks 2017" % version)
-	log.info("- Sending RFC2136 Dynamic DNS updates to DNS: %s" % options.nameserver)
-	log.info("- Debugging Logging to %s" % options.logfile)
-	log.info("- Dynamic TTL for Records: %s" % options.ttl)
-	log.info("- Override Domain: %s" % options.domain)
-	log.info("Connecting to broker {}".format(BROKER_URI))
-	with BrokerConnection(BROKER_URI) as connection:
+
+    log.info("BlueCat Nova Monitor - %s Bluecat Networks 2018" % version)
+    log.info("- AMQ connection URI: %s" % monitor_broker)
+    log.info("- Sending RFC2136 Dynamic DNS updates to DNS: %s" % monitor_nameserver)
+    log.info("- Debugging Logging to %s" % monitor_logfile)
+    log.info("- Debug Log Level: %s" % monitor_debuglevel)
+    log.info("- Dynamic TTL for Records: %s" % monitor_ttl)
+    log.info("- Override Domain: %s" % monitor_domain_override)
+
+    with BrokerConnection(monitor_broker) as connection:
 		try:
 			print(connection)
 			BCUpdater(connection).run()
 		except KeyboardInterrupt:
 			print(' - Exiting BlueCat Nova Monitor ....')
-
-
