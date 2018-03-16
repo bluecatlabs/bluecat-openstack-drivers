@@ -121,7 +121,7 @@ Nova and Neutron must be configured to state changes and notifications, the tran
 	notification_driver = messagingv2
 
 
-##### Installing the Bluecat Nova Monitor
+#### Installing the Bluecat Nova Monitor
 
 Copy the `bluecat_nova_monitor.py` to a suitable location (such as `/opt/bluecat`)
 
@@ -157,7 +157,7 @@ Copy the `bluecat_neutron_monitor.py` to a suitable location (such as `/opt/blue
 Listens to AMPQ message from Neutron to ascertain the correct DNS name for a Nova instance as a Floating IP is associated.
 The service will then send an RFC2136 DDNS update to a target BlueCat DNS server
 
-##### bluecat.conf [bluecat_neutron_monitor] section settings
+#### bluecat.conf [bluecat_neutron_monitor] section settings
 
 Set parameters for the BlueCat Neutron Monitor
 
@@ -192,7 +192,7 @@ Listens to AMPQ message from NOVA to ascertain the correct DNS name for a Nova i
 
 The service will then send an RFC2136 update to a target bluecat DNS server
 
-##### bluecat.conf [bluecat_nova_monitor] section settings
+#### bluecat.conf [bluecat_nova_monitor] section settings
 
 Set parameters for the BlueCat Neutron Monitor
 
