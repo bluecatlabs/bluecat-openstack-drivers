@@ -160,28 +160,28 @@ The service will then send an RFC2136 DDNS update to a target BlueCat DNS server
 #### bluecat.conf [bluecat_neutron_monitor] section settings
 
 Set parameters for the BlueCat Neutron Monitor
-
-`broker_uri=amqp://stackrabbit:nintendo@localhost:5672//`
+	
+	`broker_uri=amqp://stackrabbit:nintendo@localhost:5672//`
 
 Sets the AMQ broker URI, used to read rabbitMQ messages
 
-`nameserver=192.168.1.102`
+	`nameserver=192.168.1.102`
 
 Sets the target DNS server to be updated by DDNS
 
-`logfile=/opt/bluecat/Bluecat Neutron Monitor/bluecat_neutron.log`
+	`logfile=/opt/bluecat/Bluecat Neutron Monitor/bluecat_neutron.log`
 
 Sets the logfile location and name 
 
-`ttl=666`
+	`ttl=666`
 
 Sets the TTL of the records added to DNS 
 
-`domain_override=False`
+	`domain_override=False`
 
 Sets a domain name to append to the instance name, if this parameter is set to False the monitor will utilise the whole instances name as a fully qualified domain name
 
-`replace=False`
+	`replace=False`
 
 At default the neutron monitor will add floating IP records to the target DNS and not replace the private IP DNS records created by the Bluecat Nova Monitor. Setting this option to True will replace the private IP DNS records replacing with the floating IP record.
 
@@ -196,23 +196,23 @@ The service will then send an RFC2136 update to a target bluecat DNS server
 
 Set parameters for the BlueCat Neutron Monitor
 
-`broker_uri=amqp://stackrabbit:nintendo@localhost:5672//`
+	`broker_uri=amqp://stackrabbit:nintendo@localhost:5672//`
 
 Sets the AMQ broker URI, used to read rabbitMQ messages
 
-`nameserver=192.168.1.102`
+	`nameserver=192.168.1.102`
 
 Sets the target DNS server to be updated by DDNS
 
-`logfile=/opt/bluecat/Bluecat Nova Monitor/bluecat_nova.log`
+	`logfile=/opt/bluecat/Bluecat Nova Monitor/bluecat_nova.log`
 
 Sets the logfile location and name 
 
-`ttl=666`
+	`ttl=666`
 
 Sets the TTL of the records added to DNS 
 
-`domain_override=False`
+	`domain_override=False`
 
 Sets a domain name to append to the instance name, if this parameter is set to False the monitor will utilise the whole instances name as a fully qualified domain name
 
