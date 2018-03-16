@@ -121,36 +121,36 @@ Nova and Neutron must be configured to state changes and notifications, the tran
 	notification_driver = messagingv2
 
 
-#### Installing the Bluecat Nova Monitor
+##### Installing the Bluecat Nova Monitor
 
 Copy the `bluecat_nova_monitor.py` to a suitable location (such as `/opt/bluecat`)
 
-## Configure the bluecat.conf in the local directory for your environment:
+#### Configure the bluecat.conf in the local directory for your environment:
 
-[bluecat_nova_monitor]
-broker_uri=amqp://stackrabbit:nintendo@localhost:5672//
-nameserver=192.168.1.102
-logfile=/opt/bluecat/Bluecat Nova Monitor/bluecat_nova.log
-ttl=666
-domain_override=False
-debuglevel=DEBUG
+	[bluecat_nova_monitor]
+	broker_uri=amqp://stackrabbit:nintendo@localhost:5672//
+	nameserver=192.168.1.102
+	logfile=/opt/bluecat/Bluecat Nova Monitor/bluecat_nova.log
+	ttl=666
+	domain_override=False
+	debuglevel=DEBUG
 
 #### Installing the Bluecat Neutron Monitor
 
 Copy the `bluecat_neutron_monitor.py` to a suitable location (such as `/opt/bluecat`)
 
-## Configure the bluecat.conf in the local directory for your environment:
+#### Configure the bluecat.conf in the local directory for your environment:
 
-[bluecat_neutron_monitor]
-broker_uri=amqp://stackrabbit:nintendo@localhost:5672//
-nameserver=192.168.1.102
-logfile=/opt/bluecat/Bluecat Neutron Monitor/bluecat_neutron.log
-ttl=666
-domain_override=False
-replace=False
-debuglevel=DEBUG
+	[bluecat_neutron_monitor]
+	broker_uri=amqp://stackrabbit:nintendo@localhost:5672//
+	nameserver=192.168.1.102
+	logfile=/opt/bluecat/Bluecat Neutron Monitor/bluecat_neutron.log
+	ttl=666
+	domain_override=False
+	replace=False
+	debuglevel=DEBUG
 
-## Usage
+#### Usage
 
 #### Bluecat Neutron Monitor
 
