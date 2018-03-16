@@ -117,7 +117,7 @@ Nova and Neutron must be configured to state changes and notifications, the tran
 	notify_nova_on_port_data_changes = true
 	control_exchange = neutron
 	notification_topics = notifications
-	transport_url = rabbit://stackrabbit:stackqueue@192.168.1.70:5672/
+	transport_url = rabbit://stackrabbit:bluecat@192.168.1.70:5672/
 	notification_driver = messagingv2
 
 
@@ -128,7 +128,7 @@ Copy the `bluecat_nova_monitor.py` to a suitable location (such as `/opt/bluecat
 #### Configure the bluecat.conf in the local directory for your environment:
 
 	[bluecat_nova_monitor]
-	broker_uri=amqp://stackrabbit:nintendo@localhost:5672//
+	broker_uri=amqp://stackrabbit:bluecat@localhost:5672//
 	nameserver=192.168.1.102
 	logfile=/opt/bluecat/Bluecat Nova Monitor/bluecat_nova.log
 	ttl=666
@@ -142,7 +142,7 @@ Copy the `bluecat_neutron_monitor.py` to a suitable location (such as `/opt/blue
 #### Configure the bluecat.conf in the local directory for your environment:
 
 	[bluecat_neutron_monitor]
-	broker_uri=amqp://stackrabbit:nintendo@localhost:5672//
+	broker_uri=amqp://stackrabbit:bluecat@localhost:5672//
 	nameserver=192.168.1.102
 	logfile=/opt/bluecat/Bluecat Neutron Monitor/bluecat_neutron.log
 	ttl=666
@@ -161,7 +161,7 @@ The service will then send an RFC2136 DDNS update to a target BlueCat DNS server
 
 Set parameters for the BlueCat Neutron Monitor
 	
-	`broker_uri=amqp://stackrabbit:nintendo@localhost:5672//`
+	`broker_uri=amqp://stackrabbit:bluecat@localhost:5672//`
 
 Sets the AMQ broker URI, used to read rabbitMQ messages
 
@@ -196,7 +196,7 @@ The service will then send an RFC2136 update to a target bluecat DNS server
 
 Set parameters for the BlueCat Neutron Monitor
 
-	`broker_uri=amqp://stackrabbit:nintendo@localhost:5672//`
+	`broker_uri=amqp://stackrabbit:bluecat@localhost:5672//`
 
 Sets the AMQ broker URI, used to read rabbitMQ messages
 
