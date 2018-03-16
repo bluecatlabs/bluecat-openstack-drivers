@@ -2,3 +2,7 @@ local.conf
 .DS_Store
 .DS_Store
 .DS_Store
+Bluecat Neutron Monitor/bluecat.conf
+Bluecat Neutron Monitor/bluecat.conf
+Bluecat Neutron Monitor/bluecat_neutron_monitor.py
+Bluecat Nova Monitor/bluecat.conf
