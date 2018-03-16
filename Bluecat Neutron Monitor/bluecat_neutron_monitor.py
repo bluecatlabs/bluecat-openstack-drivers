@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2017 Bluecat Networks Inc.
+# Copyright 2018 Bluecat Networks Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -15,9 +15,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# BlueCat Neutron Monitor listens on the AMQP message bus of Openstack. 
+# BlueCat Neutron Monitor listens on the AMQP message bus of Openstack.
 # Whenever a Neutron notification message is seen for a port or floating_IP update, does X
-# B.Shorland - Bluecat Networks 2017
+
+# B.Shorland - Bluecat Networks 2018
 
 import dns.name
 import dns.message
@@ -38,8 +39,9 @@ from kombu import BrokerConnection
 from kombu import Exchange
 from kombu import Queue
 from kombu.mixins import ConsumerMixin
+from configparser import ConfigParser
 
-version = 0.3
+version = 0.4
 EXCHANGE_NAME="neutron"
 ROUTING_KEY="notifications.info"
 QUEUE_NAME="bluecat_neutron_monitor"
@@ -54,22 +56,29 @@ PORT_U_START="port.update.start"
 PORT_U_END="port.update.end"
 ADDITIONAL_RDCLASS = 65535
 
-# Parse command line arguments
-parser = optparse.OptionParser()
-parser.add_option('-n','--nameserver',dest="nameserver",default="0.0.0.0",)
-parser.add_option('-l','--logfile',dest="logfile",default="/opt/stack/devstack/bluecat/bluecat_neutron.log",)
-parser.add_option('-t','--ttl',dest="ttl",type=int,default=1,)
-parser.add_option('-d','--domain',dest="domain",default=False,)
-parser.add_option('-r','--replace',dest="replace",default=False,)
-options, remainder = parser.parse_args()
-print 'Sending DDNS Updates to BDDS = ',options.nameserver
-print 'Debug Logging = ',options.logfile
-print 'DDNS TTL = ',options.ttl
-print 'Domain = ',options.domain
-print 'Replace FixedIP with Floating = ',options.replace
+# read in bluecat.conf configuration settings
 
-# Set INFO to DEBUG to see the RabbitMQ BODY messages 
-log.basicConfig(filename=options.logfile, level=log.INFO, format='%(asctime)s %(message)s')
+config = ConfigParser()
+config.read('bluecat.conf')
+monitor_broker = config.get('bluecat_neutron_monitor','broker_uri')
+monitor_nameserver = config.get('bluecat_neutron_monitor', 'nameserver')
+monitor_logfile = config.get('bluecat_neutron_monitor', 'logfile')
+monitor_ttl = config.get('bluecat_neutron_monitor', 'ttl')
+monitor_domain_override = config.get('bluecat_neutron_monitor','domain_override')
+monitor_debuglevel = config.get('bluecat_neutron_monitor','debuglevel')
+monitor_replace = config.get('bluecat_neutron_monitor','replace')
+
+
+print 'AMQ URI = ',monitor_broker
+print 'Sending DDNS Updates to BDDS =',monitor_nameserver
+print 'Debug Logging =',monitor_logfile
+print 'Debug Level = ',monitor_debuglevel
+print 'DDNS TTL =',monitor_ttl
+print 'Domain Override',monitor_domain_override
+
+
+# Set INFO to DEBUG to see the RabbitMQ BODY messages
+log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
 
 def stripptr(substr, str):
         index = 0
@@ -88,48 +97,48 @@ def getrevzone_auth(domain):
 	request = dns.message.make_query(domain, dns.rdatatype.ANY)
 	request.flags |= dns.flags.AD
 	request.find_rrset(request.additional, dns.name.root, ADDITIONAL_RDCLASS, dns.rdatatype.OPT, create=True, force_unique=True)
-	response = dns.query.udp(request, options.nameserver)
+	response = dns.query.udp(request, monitor_nameserver)
 	if not response.authority:
-		log.info ('[getrevzone_auth] - DNS not authoritive')
+		log.debug ('[getrevzone_auth] - DNS not authoritive')
 		return
 	else:
 		auth_reverse = str(response.authority).split(' ')[1]
-		log.info ('[getrezone_auth] - %s' % str(auth_reverse).lower())
+		log.debug ('[getrezone_auth] - %s' % str(auth_reverse).lower())
 		return str(auth_reverse).lower()
 
 # Add PTR record for a given address
 def addREV(ipaddress,ttl,name):
 	reversedomain = dns.reversename.from_address(str(ipaddress))
 	reversedomain = str(reversedomain).rstrip('.')
-	log.info ('[addREV] - reversedomain  %s' % reversedomain)
+	log.debug ('[addREV] - reversedomain  %s' % reversedomain)
 	authdomain = getrevzone_auth(str(reversedomain)).rstrip('.')
-	log.info ('[addREV] - authdomain %s' % authdomain)
+	log.debug ('[addREV] - authdomain %s' % authdomain)
 	label = stripptr(authdomain, reversedomain)
-	log.info ('[addREV] - label %s' % label)
-	log.info ('[addREV] - name %s' % name)
+	log.debug ('[addREV] - label %s' % label)
+	log.debug ('[addREV] - name %s' % name)
 	update = dns.update.Update(authdomain)
-	if options.replace == False:
-		update.add(label,options.ttl,dns.rdatatype.PTR, name)
-	else: 
-		update.replace(label,options.ttl,dns.rdatatype.PTR, name)
-	response = dns.query.udp(update, options.nameserver)
+	if monitor_replace == False:
+		update.add(label,monitor_ttl,dns.rdatatype.PTR, name)
+	else:
+		update.replace(label,monitor_ttl,dns.rdatatype.PTR, name)
+	response = dns.query.udp(update, monitor_nameserver)
 	return response
-	
+
 # Delete PTR record for a passed address
 def delREV(ipaddress,name):
 	name = str(name)
 	reversedomain = dns.reversename.from_address(str(ipaddress))
 	reversedomain = str(reversedomain).rstrip('.')
-	log.info ('[delREV] - reversedomain  %s' % reversedomain)
+	log.debug ('[delREV] - reversedomain  %s' % reversedomain)
 	authdomain = getrevzone_auth(str(reversedomain)).rstrip('.')
-	log.info ('[delREV] - authdomain  %s' % authdomain)
+	log.debug ('[delREV] - authdomain  %s' % authdomain)
 	update = dns.update.Update(authdomain)
 	label = stripptr(authdomain, reversedomain)
-	log.info ('[delREV] - label  %s' % label)
+	log.debug ('[delREV] - label  %s' % label)
 	update.delete(label,'PTR',name)
-	response = dns.query.udp(update, options.nameserver)
+	response = dns.query.udp(update, monitor_nameserver)
 	return response
-	
+
 # Delete A/AAAA record from name
 def delFWD(name,ipaddress):
 	name = str(name)
@@ -137,62 +146,62 @@ def delFWD(name,ipaddress):
 	update = dns.update.Update(splitFQDN(name)[1])
 	hostname = splitFQDN(name)[0]
 	domain = splitFQDN(name)[1]
-	log.info ('[delFWD] - name %s' % name)
-	log.info ('[delFWD] - ipaddress %s' % ipaddress)
-	log.info ('[delFWD] - hostname %s' % hostname)
-	log.info ('[delFWD] - domainname %s' % domain)
+	log.debug ('[delFWD] - name %s' % name)
+	log.debug ('[delFWD] - ipaddress %s' % ipaddress)
+	log.debug ('[delFWD] - hostname %s' % hostname)
+	log.debug ('[delFWD] - domainname %s' % domain)
 	update.delete(hostname, 'A', ipaddress)
-	response = dns.query.udp(update, options.nameserver)
+	response = dns.query.udp(update, monitor_nameserver)
 	return response
 
-# add A/AAAA record 
+# add A/AAAA record
 def addFWD(name,ttl,ipaddress):
 	ipaddress = str(ipaddress)
 	update = dns.update.Update(splitFQDN(name)[1])
 	hostname = splitFQDN(name)[0]
-	log.info ('[addFWD] - hostname %s' % hostname)
-	log.info ('[addFWD] - domain %s' % splitFQDN(name)[1])
+	log.debug ('[addFWD] - hostname %s' % hostname)
+	log.debug ('[addFWD] - domain %s' % splitFQDN(name)[1])
 	address_type = enumIPtype(ipaddress)
         if address_type == 4:
-		log.info ('[addFWD] - IPv4') 
-		if options.replace == False:
-			update.add(hostname,options.ttl,dns.rdatatype.A, ipaddress)
-		else: 
-			update.replace(hostname,options.ttl,dns.rdatatype.A, ipaddress)
+		log.debug ('[addFWD] - IPv4')
+		if monitor_replace == False:
+			update.add(hostname,monitor_ttl,dns.rdatatype.A, ipaddress)
+		else:
+			update.replace(hostname,monitor_ttl,dns.rdatatype.A, ipaddress)
 	elif address_type == 6:
-		log.info ('[addFWD] - IPv6')
-		if options.replace == False:
-			update.add(hostname,options.ttl,dns.rdatatype.AAAA, ipaddress)
-		else: 
-			update.replace(hostname,options.ttl,dns.rdatatype.AAAA, ipaddress)
-	response = dns.query.udp(update, options.nameserver)
+		log.debug ('[addFWD] - IPv6')
+		if monitor_replace == False:
+			update.add(hostname,monitor_ttl,dns.rdatatype.AAAA, ipaddress)
+		else:
+			update.replace(hostname,monitor_ttl,dns.rdatatype.AAAA, ipaddress)
+	response = dns.query.udp(update, monitor_nameserver)
 	return response
 
-# Resolve PTR record from either IPv4 or IPv6 address 
+# Resolve PTR record from either IPv4 or IPv6 address
 def resolvePTR(address):
 	type = enumIPtype(address)
 	address = str(address)
 	if type == 4:
 		req = '.'.join(reversed(address.split('.'))) + ".in-addr.arpa."
-		log.info ('[ResolvePTR] - %s' % req)
+		log.debug ('[ResolvePTR] - %s' % req)
 	elif type == 6:
 		# exploded concatenated V6 address out
 		v6address = ipaddress.ip_address(unicode(address))
 		v6address = v6address.exploded
 		req = '.'.join(reversed(v6address.replace(':',''))) + ".ip6.arpa."
-		log.info ('[ResolvePTR] - %s' % req)
+		log.debug ('[ResolvePTR] - %s' % req)
 	myResolver = dns.resolver.Resolver()
-	myResolver.nameservers = [options.nameserver]
+	myResolver.nameservers = [monitor_nameserver]
 	try:
 		myAnswers = myResolver.query(req, "PTR")
 		for rdata in myAnswers:
-			log.info ('[ResolvePTR] - %s' % rdata)
+			log.debug ('[ResolvePTR] - %s' % rdata)
 			return rdata
 	except:
-		log.info ('[ResolvePTR] - PTR query failed')
+		log.debug ('[ResolvePTR] - PTR query failed')
 		return "PTR Query failed"
 
-# Returns address type 4 or 6 
+# Returns address type 4 or 6
 def enumIPtype(address):
 	address = ipaddress.ip_address(unicode(address))
 	return address.version
@@ -204,7 +213,7 @@ def splitFQDN(name):
 	return hostname,domain
 
 class BCUpdater(ConsumerMixin):
-    
+
     def __init__(self, connection):
         self.connection = connection
         return
@@ -232,32 +241,32 @@ class BCUpdater(ConsumerMixin):
 		log.debug('Body: %r' % body)
 		jbody = json.loads(body['oslo.message'])
 		event_type = jbody['event_type']
-		log.info ('EVENT_TYPE = %s' % event_type) 
+		log.info ('EVENT_TYPE = %s' % event_type)
  		if event_type == FLOAT_START:
  			# no relevent information in floatingip.create.start
- 			log.info ('[floatingip.create.start]') 
- 			
+ 			log.info ('[floatingip.create.start]')
+
  		elif event_type == FLOAT_END:
  			# only floating_ip_address in payload as IP is selected from pool
  			fixed = jbody['payload']['floatingip']['fixed_ip_address']
- 			log.info ('[floatingip.create.end] -> FIXED_IP_ADDRESS = %s' % fixed) 
+ 			log.info ('[floatingip.create.end] -> FIXED_IP_ADDRESS = %s' % fixed)
  			float = jbody['payload']['floatingip']['floating_ip_address']
- 			log.info ('[floatingip.create.end] -> FLOATING_IP_ADDRESS = %s' % float) 
+ 			log.info ('[floatingip.create.end] -> FLOATING_IP_ADDRESS = %s' % float)
  			port_id = jbody['payload']['floatingip']['port_id']
  			log.info ('[floatingip.create.end] -> PORT_ID = %s' % port_id)
- 				
+
  		elif event_type == FLOAT_U_START:
  			# fixed IP from instance to which floating IP will be assigned and the port_id (upon associated)
  			# NULL (upon dis-associated)
  			if 'fixed_ip_address' in jbody['payload']['floatingip']:
  				fixed = jbody['payload']['floatingip']['fixed_ip_address']
  				if fixed is not None:
- 					log.info ('[floatingip.update.start] -> FIXED_IP_ADDRESS = %s' % fixed) 
+ 					log.info ('[floatingip.update.start] -> FIXED_IP_ADDRESS = %s' % fixed)
  					checkit = resolvePTR(fixed)
  					log.info ('[floatingip.update.start] -> FIXED FQDN = %s' % checkit)
  					port_id = jbody['payload']['floatingip']['port_id']
- 					log.info ('[floatingip.update.start] -> PORT_ID = %s' % port_id) 
- 			
+ 					log.info ('[floatingip.update.start] -> PORT_ID = %s' % port_id)
+
  		elif event_type == FLOAT_U_END:
  			# Fixed_IP, Floating_IP and Port_ID seen (upon associate)
  			# Fixed_IP = None, floating_IP, and port_id = None (upon disassociation)
@@ -268,16 +277,16 @@ class BCUpdater(ConsumerMixin):
  				log.info ('[floatingip.update.end] -> FloatingIP = %s ' % float)
  				port_id = jbody['payload']['floatingip']['port_id']
  				log.info ('[floatingip.update.end] -> PortID = %s' % port_id)
- 				if fixed is not None and float is not None and port_id is not None: 
+ 				if fixed is not None and float is not None and port_id is not None:
  					log.info ('[floatingip.update.end] -> Associating FloatingIP to instance')
- 					log.info ('[floatingip.update.end] -> FIXED_IP_ADDRESS = %s' % fixed) 
+ 					log.info ('[floatingip.update.end] -> FIXED_IP_ADDRESS = %s' % fixed)
  					checkit = str(resolvePTR(fixed))
  					log.info ('[floatingip.update.end] -> FIXED FQDN = %s' % checkit)
- 					log.info ('[floatingip.update.end] -> FLOATING_IP_ADDRESS = %s' % float) 
- 					log.info ('[floatingip.update.end] -> PORT_ID = %s' % port_id) 
+ 					log.info ('[floatingip.update.end] -> FLOATING_IP_ADDRESS = %s' % float)
+ 					log.info ('[floatingip.update.end] -> PORT_ID = %s' % port_id)
  					if options.replace == False:
 						log.info ('[floatingip.update.end] - Updating DNS - adding FLOATING_IP records')
-					else: 
+					else:
 						log.info ('[floatingip.update.end] - Updating DNS - replacing FIXED_IP records with FLOATING_IP')
  					addFWD(checkit,'666',float)
  					addREV(float,'666',checkit)
@@ -288,43 +297,42 @@ class BCUpdater(ConsumerMixin):
  					log.info ('[floatingip.update.end] -> FLOATING_IP FQDN = %s' % checkit)
  					log.info ('[floatingip.update.end] - removing FLOATING_IP records')
  					delFWD(checkit,float)
- 					delREV(float,checkit)	
- 			
+ 					delREV(float,checkit)
+
  		elif event_type == PORT_START:
  			if 'id' in jbody['payload']['port']:
  				port_id = jbody['payload']['port']['id']
- 				log.info ('[port.create.start] -> PORT_ID = %s' % port_id) 
- 			
+ 				log.info ('[port.create.start] -> PORT_ID = %s' % port_id)
+
  		elif event_type == PORT_END:
  			port_id = jbody['payload']['port']['id']
- 			log.info ('[port.create.end] -> PORT_ID = %s' % port_id) 
- 			
+ 			log.info ('[port.create.end] -> PORT_ID = %s' % port_id)
+
  		elif event_type == PORT_U_START:
  			if 'id' in jbody['payload']['port']:
  				port_id = jbody['payload']['port']['id']
- 				log.info ('[port.update.start] - > PORT_ID = %s' % port_id) 
- 			
+ 				log.info ('[port.update.start] - > PORT_ID = %s' % port_id)
+
  		elif event_type == PORT_U_END:
  			port_id = jbody['payload']['port']['id']
- 			log.info ('[port.update.end] -> PORT_ID = %s' % port_id) 
+ 			log.info ('[port.update.end] -> PORT_ID = %s' % port_id)
  			for temp in jbody['payload']['port']['fixed_ips']:
  				addr = temp['ip_address']
- 				log.info ('[port.update.end] -> IP ADDRESS = %s' % addr) 
- 					
- 		
+ 				log.info ('[port.update.end] -> IP ADDRESS = %s' % addr)
+
 if __name__ == "__main__":
-	log.info("BlueCat Neutron Monitor - %s Bluecat Networks 2017" % version)
-	log.info("- Sending RFC2136 Dynamic DNS updates to DNS: %s" % options.nameserver)
-	log.info("- Debugging Logging to %s" % options.logfile)
-	log.info("- Dynamic TTL for Records: %s" % options.ttl)
-	log.info("- Override Domain: %s" % options.domain)
-	log.info("- Replace FixedIP with Floating: %s" % options.replace)
-	
-	with BrokerConnection(BROKER_URI) as connection:
+    log.info("BlueCat Neutron Monitor - %s Bluecat Networks 2018" % version)
+    log.info("- AMQ connection URI: %s" % monitor_broker)
+    log.info("- Sending RFC2136 Dynamic DNS updates to DNS: %s" % monitor_nameserver)
+    log.info("- Debugging Logging to %s" % monitor_logfile)
+    log.info("- Debug Log Level: %s" % monitor_debuglevel)
+    log.info("- Dynamic TTL for Records: %s" % monitor_ttl)
+    log.info("- Override Domain: %s" % monitor_domain_override)
+    log.info("- Replace FixedIP with Floating: %s" % monitor_replace)
+
+    with BrokerConnection(monitor_broker) as connection:
 		try:
 			print(connection)
 			BCUpdater(connection).run()
 		except KeyboardInterrupt:
 			print(' - Exiting Bluecat Neutron Monitor ....')
-
-
