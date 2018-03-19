@@ -117,7 +117,7 @@ Nova and Neutron must be configured to state changes and notifications, the tran
 	notify_nova_on_port_data_changes = true
 	control_exchange = neutron
 	notification_topics = notifications
-	transport_url = rabbit://stackrabbit:stackqueue@192.168.1.70:5672/
+	transport_url = rabbit://stackrabbit:bluecat@192.168.1.70:5672/
 	notification_driver = messagingv2
 
 
@@ -125,68 +125,64 @@ Nova and Neutron must be configured to state changes and notifications, the tran
 
 Copy the `bluecat_nova_monitor.py` to a suitable location (such as `/opt/bluecat`)
 
-Configure the bluecat.conf in the local directory for your environment:
+#### Configure the bluecat.conf in the local directory for your environment:
 
-[bluecat_nova_monitor]
-broker_uri=amqp://stackrabbit:nintendo@localhost:5672//
-nameserver=192.168.1.102
-logfile=/home/brian/bluecat/Bluecat Neutron Monitor/bluecat_neutron.log
-ttl=666
-domain_override=False
-debuglevel=DEBUG
+	[bluecat_nova_monitor]
+	broker_uri=amqp://stackrabbit:bluecat@localhost:5672//
+	nameserver=192.168.1.102
+	logfile=/opt/bluecat/Bluecat Nova Monitor/bluecat_nova.log
+	ttl=666
+	domain_override=False
+	debuglevel=DEBUG
 
 #### Installing the Bluecat Neutron Monitor
 
 Copy the `bluecat_neutron_monitor.py` to a suitable location (such as `/opt/bluecat`)
 
-Configure the bluecat.conf in the local directory for your environment:
+#### Configure the bluecat.conf in the local directory for your environment:
 
-[bluecat_neutron_monitor]
-broker_uri=amqp://stackrabbit:nintendo@localhost:5672//
-nameserver=192.168.1.102
-logfile=/home/brian/bluecat/Bluecat Nova Monitor/bluecat_nova.log
-ttl=666
-domain_override=False
-replace=False
-debuglevel=DEBUG
+	[bluecat_neutron_monitor]
+	broker_uri=amqp://stackrabbit:bluecat@localhost:5672//
+	nameserver=192.168.1.102
+	logfile=/opt/bluecat/Bluecat Neutron Monitor/bluecat_neutron.log
+	ttl=666
+	domain_override=False
+	replace=False
+	debuglevel=DEBUG
 
-## Usage
-
-#### Bluecat Neutron Driver
-
-Delivered as a patch to the native Neutron plugin IPAM driver, parameters are configured during installation
+#### Usage
 
 #### Bluecat Neutron Monitor
 
 Listens to AMPQ message from Neutron to ascertain the correct DNS name for a Nova instance as a Floating IP is associated.
-
 The service will then send an RFC2136 DDNS update to a target BlueCat DNS server
 
-##### bluecat.conf [bluecat_neutron_monitor] section settings
+#### bluecat.conf [bluecat_neutron_monitor] section settings
 
 Set parameters for the BlueCat Neutron Monitor
+	
+	`broker_uri=amqp://stackrabbit:bluecat@localhost:5672//`
 
-`broker_uri`
+Sets the AMQ broker URI, used to read rabbitMQ messages
 
-Set the AMQ broker URI, used to read rabbitMQ messages
+	`nameserver=192.168.1.102`
 
-`nameserver`
+Sets the target DNS server to be updated by DDNS
 
-Set the target DNS server to be updated by DDNS
+	`logfile=/opt/bluecat/Bluecat Neutron Monitor/bluecat_neutron.log`
 
-`logfile`
+Sets the logfile location and name 
 
-Sets the logfile location and name (Default `/opt/bluecat/bluecat_neutron.log`)
+	`ttl=666`
 
-`ttl`
+Sets the TTL of the records added to DNS 
 
-Sets the TTL of the records added to DNS (Default 1)
-
-`domain_override`
+	`domain_override=False`
 
 Sets a domain name to append to the instance name, if this parameter is set to False the monitor will utilise the whole instances name as a fully qualified domain name
 
-`replace`
+	`replace=False`
+
 At default the neutron monitor will add floating IP records to the target DNS and not replace the private IP DNS records created by the Bluecat Nova Monitor. Setting this option to True will replace the private IP DNS records replacing with the floating IP record.
 
 
@@ -196,27 +192,27 @@ Listens to AMPQ message from NOVA to ascertain the correct DNS name for a Nova i
 
 The service will then send an RFC2136 update to a target bluecat DNS server
 
-##### bluecat.conf [bluecat_nova_monitor] section settings
+#### bluecat.conf [bluecat_nova_monitor] section settings
 
 Set parameters for the BlueCat Neutron Monitor
 
-`broker_uri`
+	`broker_uri=amqp://stackrabbit:bluecat@localhost:5672//`
 
-Set the AMQ broker URI, used to read rabbitMQ messages
+Sets the AMQ broker URI, used to read rabbitMQ messages
 
-`nameserver`
+	`nameserver=192.168.1.102`
 
-Set the target DNS server to be updated by DDNS
+Sets the target DNS server to be updated by DDNS
 
-`logfile`
+	`logfile=/opt/bluecat/Bluecat Nova Monitor/bluecat_nova.log`
 
-Sets the logfile location and name (Default `/opt/bluecat/bluecat_nova.log`)
+Sets the logfile location and name 
 
-`ttl`
+	`ttl=666`
 
-Sets the TTL of the records added to DNS (Default 1)
+Sets the TTL of the records added to DNS 
 
-`domain_override`
+	`domain_override=False`
 
 Sets a domain name to append to the instance name, if this parameter is set to False the monitor will utilise the whole instances name as a fully qualified domain name
 
@@ -239,7 +235,7 @@ Thank you for contributing your time to making this project a success.
 
 ## License
 
-Copyright 2017 BlueCat Networks (USA) Inc. and its affiliates
+Copyright 2018 BlueCat Networks (USA) Inc. and its affiliates
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
