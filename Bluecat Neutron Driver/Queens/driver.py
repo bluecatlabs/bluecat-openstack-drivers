@@ -19,6 +19,7 @@
 #					- Added flag to toggle updates/deletion of networks in BAM
 # V0.13  20180307	- Moved BlueCat config options to a config file. 
 # Queens V0.14	 20180308	- Changed to support Queens OS release
+# Queens V0.15   20180322 - Added missing exception line that that accidentally got removed during queens modifications
 
 import itertools
 import random
@@ -117,7 +118,9 @@ class NeutronDbSubnet(ipam_base.Subnet):
 #                       neutron_subnet_id)
             LOG.error("BCN: IPAM subnet referenced to "
                           "Neutron subnet %s does not exist",
-                      neutron_subnet_id)        
+                      neutron_subnet_id) 
+            raise n_exc.SubnetNotFound(subnet_id=neutron_subnet_id)
+       
         pools = []
         for pool in ipam_subnet.allocation_pools:
             pools.append(netaddr.IPRange(pool['first_ip'], pool['last_ip']))
