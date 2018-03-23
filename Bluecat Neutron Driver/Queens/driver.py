@@ -20,6 +20,7 @@
 # V0.13  20180307	- Moved BlueCat config options to a config file. 
 # Queens V0.14	 20180308	- Changed to support Queens OS release
 # Queens V0.15   20180322 - Added missing exception line that that accidentally got removed during queens modifications
+# Queens V0.16   20180323 - -Resolved issue with undefined variable 'bam_updatemodify_networks' in update subnet().
 
 import itertools
 import random
@@ -474,7 +475,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         # BlueCat additions
         paramsBAM = getBCNConfig(BC_configFileName, "BAM")
         
-        if (bam_updatemodify_networks== "True"):        
+        if (paramsBAM['bam_updatemodify_networks'] == "True"):        
 			soap_client = _bam_login(paramsBAM)
 			configID = _get_bam_configid(paramsBAM, soap_client)
 			LOG.info("BCN: Got configID %s" % (configID))

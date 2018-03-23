@@ -18,6 +18,7 @@
 # V0.12  20180307	- Removed hardcoded configuration reference.
 #					- Added flag to toggle updates/deletion of networks in BAM
 # Pike_V0.13  20180314	- Moved BlueCat config options to a config file.
+# Pike_V0.14  20180323	-Resolved issue with undefined variable 'bam_updatemodify_networks' in update subnet().
 
 import itertools
 import random
@@ -458,7 +459,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         # BlueCat additions
         paramsBAM = getBCNConfig(BC_configFileName, "BAM")
         
-        if (bam_updatemodify_networks== "True"):        
+        if (paramsBAM['bam_updatemodify_networks'] == "True"):        
 			soap_client = _bam_login(paramsBAM)
 			configID = _get_bam_configid(paramsBAM, soap_client)
 			LOG.info("BCN: Got configID %s" % (configID))
