@@ -17,7 +17,12 @@
 # V0.11  20171127
 # V0.12  20180307	- Removed hardcoded configuration reference.
 #					- Added flag to toggle updates/deletion of networks in BAM
+<<<<<<< HEAD:Bluecat Neutron Driver/driver.py
 # V0.13  20180314	- Moved BlueCat config options to a config file.
+=======
+# Pike_V0.13  20180314	- Moved BlueCat config options to a config file.
+# Pike_V0.14  20180323	-Resolved issue with undefined variable 'bam_updatemodify_networks' in update subnet().
+>>>>>>> c5721920174dd5f9f45c19e3fb7161e2e55f07ae:Bluecat Neutron Driver/Pike/driver.py
 
 import itertools
 import random
@@ -458,7 +463,11 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         # BlueCat additions
         paramsBAM = getBCNConfig(BC_configFileName, "BAM")
         
+<<<<<<< HEAD:Bluecat Neutron Driver/driver.py
         if (bam_updatemodify_networks== "True"):        
+=======
+        if (paramsBAM['bam_updatemodify_networks'] == "True"):        
+>>>>>>> c5721920174dd5f9f45c19e3fb7161e2e55f07ae:Bluecat Neutron Driver/Pike/driver.py
 			soap_client = _bam_login(paramsBAM)
 			configID = _get_bam_configid(paramsBAM, soap_client)
 			LOG.info("BCN: Got configID %s" % (configID))
@@ -695,7 +704,11 @@ def delBCNetwork(configID, subnet_id):
     
     # This needs expanding to search each IP4 and IP6 block to find the relevant network to delete.
     LOG.info("BCN: Getting ParentBlockID Info  ...")
+<<<<<<< HEAD:Bluecat Neutron Driver/driver.py
     parentBlockId = apiGetBlockID(configID, bam_ipv4_public_block, "IP4Block")
+=======
+    parentBlockId = apiGetBlockID(configID, paramsBAM['bam_ipv4_private_block'], "IP4Block")
+>>>>>>> c5721920174dd5f9f45c19e3fb7161e2e55f07ae:Bluecat Neutron Driver/Pike/driver.py
     value = ""
     # get child nets
     # Needs expanding to search all Ipv4 and IPv6 TL blocks, but currently I am only working in one. 
