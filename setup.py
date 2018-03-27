@@ -21,7 +21,7 @@ setup(
   author_email = 'bshorland@bluecatnetworks.com',
   url = 'https://github.com/bluecatlabs/bluecat-openstack-drivers', # use the URL to the github repo
   download_url = 'https://github.com/bluecatlabs/bluecat-openstack-drivers/archive/0.1.tar.gz', # I'll explain this in a second
-  install_requires = ['dnspython','configparser','suds','pprint','librabbitmq','ipaddress'],
+  install_requires = ['dnspython','configparser','suds','pprint','ipaddress'],
 	
   keywords = ['BlueCat', 'OpenStack', 'Driver'], # arbitrary keywords
   classifiers = [ 
