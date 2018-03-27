@@ -15,9 +15,12 @@
 
 # DH
 # V0.11  20171127
-# V0.12  20180307	- Removed hardcoded configuration reference.
+# V0.12  20180306	- Removed hardcoded configuration reference.
 #					- Added flag to toggle updates/deletion of networks in BAM
-# V0.13  20180314	- Moved BlueCat config options to a config file.
+# V0.13  20180307	- Moved BlueCat config options to a config file. 
+# Queens V0.14	 20180308	- Changed to support Queens OS release
+# Queens V0.15   20180322 - Added missing exception line that that accidentally got removed during queens modifications
+# Queens V0.16   20180323 - -Resolved issue with undefined variable 'bam_updatemodify_networks' in update subnet().
 
 import itertools
 import random
@@ -29,7 +32,8 @@ from oslo_db import exception as db_exc
 from oslo_log import log
 from oslo_utils import uuidutils
 
-from neutron._i18n import _, _LE
+from neutron._i18n import _
+#from neutron._i18n import _, _LE
 from neutron.ipam import driver as ipam_base
 from neutron.ipam.drivers.neutrondb_ipam import db_api as ipam_db_api
 from neutron.ipam import exceptions as ipam_exc
@@ -110,28 +114,41 @@ class NeutronDbSubnet(ipam_base.Subnet):
         ipam_subnet = ipam_db_api.IpamSubnetManager.load_by_neutron_subnet_id(
             ctx, neutron_subnet_id)
         if not ipam_subnet:
-            LOG.error(_LE("BCN: IPAM subnet referenced to "
-                          "Neutron subnet %s does not exist"),
-                      neutron_subnet_id)
+#             LOG.error(_LE("BCN: IPAM subnet referenced to "
+#                           "Neutron subnet %s does not exist"),
+#                       neutron_subnet_id)
+            LOG.error("BCN: IPAM subnet referenced to "
+                          "Neutron subnet %s does not exist",
+                      neutron_subnet_id) 
             raise n_exc.SubnetNotFound(subnet_id=neutron_subnet_id)
+       
         pools = []
         for pool in ipam_subnet.allocation_pools:
             pools.append(netaddr.IPRange(pool['first_ip'], pool['last_ip']))
 
-        neutron_subnet = cls._fetch_subnet(ctx, neutron_subnet_id)
+        neutron_subnet_obj = cls._fetch_subnet(ctx, neutron_subnet_id)
+        #neutron_subnet = cls._fetch_subnet(ctx, neutron_subnet_id)
+
+#         return cls(ipam_subnet['id'],
+#                    ctx,
+#                    cidr=neutron_subnet['cidr'],
+#                    allocation_pools=pools,
+#                    gateway_ip=neutron_subnet['gateway_ip'],
+#                    tenant_id=neutron_subnet['tenant_id'],
+#                    subnet_id=neutron_subnet_id)
 
         return cls(ipam_subnet['id'],
                    ctx,
-                   cidr=neutron_subnet['cidr'],
+                   cidr=neutron_subnet_obj.cidr,
                    allocation_pools=pools,
-                   gateway_ip=neutron_subnet['gateway_ip'],
-                   tenant_id=neutron_subnet['tenant_id'],
+                   gateway_ip=neutron_subnet_obj.gateway_ip,
+                   tenant_id=neutron_subnet_obj.tenant_id,
                    subnet_id=neutron_subnet_id)
-
     @classmethod
     def _fetch_subnet(cls, context, id):
         plugin = directory.get_plugin()
-        return plugin._get_subnet(context, id)
+#        return plugin._get_subnet(context, id)
+        return plugin._get_subnet_object(context, id)
 
     def __init__(self, internal_id, ctx, cidr=None,
                  allocation_pools=None, gateway_ip=None, tenant_id=None,
@@ -458,7 +475,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         # BlueCat additions
         paramsBAM = getBCNConfig(BC_configFileName, "BAM")
         
-        if (bam_updatemodify_networks== "True"):        
+        if (paramsBAM['bam_updatemodify_networks'] == "True"):        
 			soap_client = _bam_login(paramsBAM)
 			configID = _get_bam_configid(paramsBAM, soap_client)
 			LOG.info("BCN: Got configID %s" % (configID))
@@ -695,7 +712,7 @@ def delBCNetwork(configID, subnet_id):
     
     # This needs expanding to search each IP4 and IP6 block to find the relevant network to delete.
     LOG.info("BCN: Getting ParentBlockID Info  ...")
-    parentBlockId = apiGetBlockID(configID, bam_ipv4_public_block, "IP4Block")
+    parentBlockId = apiGetBlockID(configID, paramsBAM['bam_ipv4_private_block'], "IP4Block")
     value = ""
     # get child nets
     # Needs expanding to search all Ipv4 and IPv6 TL blocks, but currently I am only working in one. 
@@ -905,3 +922,4 @@ def _get_bam_viewid(soap_client, configId, viewName):
    viewId = long(view['id'])
    #LOG.info("BCN: Got View ID %d" % (viewId))
    return viewId 
+   
