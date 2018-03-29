@@ -1,8 +1,0 @@
-include bluecatopenstack/devstack/local.conf
-include bluecatopenstack/driver.ini
-include bluecatopenstack/bluecat.conf
-include LICENSE
-include MANIFEST.in
-include docs/openstack_bluecat_diagram.pdf
-include README.md
-
