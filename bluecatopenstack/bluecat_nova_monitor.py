@@ -38,11 +38,25 @@ import datetime
 import sys, optparse
 import json
 import logging as log
+import sys
 from kombu import BrokerConnection
 from kombu import Exchange
 from kombu import Queue
 from kombu.mixins import ConsumerMixin
-from configparser import ConfigParser
+
+
+import sys
+from oslo_config import cfg
+from oslo_service import service
+import oslo_messaging
+
+bluecat_nova_parameters = [
+    cfg.StrOpt('bcn_nova_transport_url', default=None, help=("BlueCat Nova Monitor Transport URL")),
+    cfg.StrOpt('bcn_nova_nameserver', default=None, help=("BlueCat Nova Monitor NameServer")),
+    cfg.StrOpt('bcn_nova_logfile', default=None, help=("BlueCat Nova Monitor Logfile")),
+    cfg.StrOpt('bcn_nova_ttl', default=None, help=("BlueCat Nova Monitor TTL")),
+    cfg.StrOpt('bcn_nova_domain_override', default=None, help=("BlueCat Nova Monitor Domain Override")),
+    cfg.StrOpt('bcn_nova_debuglevel', default=None, help=("BlueCat Nova Monitor Debug Level"))]
 
 version = 1.0
 EXCHANGE_NAME="nova"
@@ -53,25 +67,34 @@ EVENT_DELETE="compute.instance.delete.start"
 EVENT_UPDATE="compute.instance.update"
 ADDITIONAL_RDCLASS = 65535
 
-# read in bluecat.conf configuration settings
+bluecat_group = cfg.OptGroup(name='bluecat',title='Bluecat Group')
 
-config = ConfigParser()
-config.read('bluecat.conf')
-monitor_broker = config.get('bluecat_nova_monitor','broker_uri')
-monitor_nameserver = config.get('bluecat_nova_monitor', 'nameserver')
-monitor_logfile = config.get('bluecat_nova_monitor', 'logfile')
-monitor_ttl = config.get('bluecat_nova_monitor', 'ttl')
-monitor_domain_override = config.get('bluecat_nova_monitor','domain_override')
-monitor_debuglevel = config.get('bluecat_nova_monitor','debuglevel')
+def config_parser(conf,list):
+	CONF = cfg.CONF
+	CONF.register_group(bluecat_group)
+	CONF.register_opts(list, "bluecat")
+	CONF(default_config_files=conf)
+	return CONF
 
-print 'AMQ URI = ',monitor_broker
-print 'Sending DDNS Updates to BDDS =',monitor_nameserver
-print 'Debug Logging =',monitor_logfile
-print 'Debug Level = ',monitor_debuglevel
-print 'DDNS TTL =',monitor_ttl
-print 'Domain Override',monitor_domain_override
+# read in settings from nova.conf
 
-# Set INFO to DEBUG to see the RabbitMQ BODY messages
+NOVA_CONF=config_parser(['/etc/nova/nova.conf'],bluecat_nova_parameters)
+
+monitor_broker = NOVA_CONF.bluecat.bcn_nova_transport_url
+monitor_nameserver = NOVA_CONF.bluecat.bcn_nova_nameserver
+monitor_logfile = NOVA_CONF.bluecat.bcn_nova_logfile
+monitor_ttl = NOVA_CONF.bluecat.bcn_nova_ttl
+monitor_domain_override = NOVA_CONF.bluecat.bcn_nova_domain_override
+monitor_debuglevel = NOVA_CONF.bluecat.bcn_nova_debuglevel
+
+print 'BlueCat Nova Monitor Transport URL = ',monitor_broker
+print 'BlueCat Nova Monitor NameServer =',monitor_nameserver
+print 'BlueCat Nova Monitor Logfile =',monitor_logfile
+print 'BlueCat Nova Monitor Debug Level = ',monitor_debuglevel
+print 'BlueCat Nova Monitor TTL =',monitor_ttl
+print 'BlueCat Nova Monitor Domain Override = ',monitor_domain_override
+
+# # read from nova.conf [bluecat] settings parameters bcn_nova_debuglevel and bcn_nova_logfile
 log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
 
 def stripptr(substr, str):
@@ -327,7 +350,7 @@ class BCUpdater(ConsumerMixin):
 if __name__ == "__main__":
 
     log.info("BlueCat Nova Monitor - %s Bluecat Networks 2018" % version)
-    log.info("- AMQ connection URI: %s" % monitor_broker)
+    log.info("- Transport URL: %s" % monitor_broker)
     log.info("- Sending RFC2136 Dynamic DNS updates to DNS: %s" % monitor_nameserver)
     log.info("- Debugging Logging to %s" % monitor_logfile)
     log.info("- Debug Log Level: %s" % monitor_debuglevel)

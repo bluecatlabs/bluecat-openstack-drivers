@@ -1,17 +1,15 @@
-# BlueCat OpenStack Integration
+# BlueCat OpenStack Driver
 The BlueCat OpenStack example integration consists of three Python-based components:
 
-- The BlueCat OpenStack Neutron driver patch, which documents OpenStack subnets,ports and compute instances as they are provisioned within BlueCat Address Manager™ (BAM)
+- The BlueCat OpenStack Neutron IPAM Driver, which documents OpenStack subnets,ports and compute instances as they are provisioned within BlueCat Address Manager™ (BAM)
 - The BlueCat OpenStack Nova monitor, which sends OpenStack instance FQDNs (A,AAAA and PTRs) to a Bluecat DNS server (BDDS) dynamically, which then updates the DNS records within Bluecat Address Manager™ (BAM) added by the neutron driver
 - The Bluecat Neutron monitor, which sends floating IP assignment updates (A,AAAA and PTRs) to Bluecat DNS server dynamically, which then updates the DNS records within Bluecat Address Manager™ (BAM) added by the OpenStack Nova Monitor
 
-
-
 ## Installation
-All development has taken place against DevStack (upon Ubuntu 16.10), installation directly onto production OpenStack Neutron and Nova nodes should be tested and validated independently
+All development has taken place against DevStack, installation directly onto production OpenStack Neutron and Nova nodes should be tested and validated independently
 
 
-#### On BlueCat Address Manager™ (BAM)
+#### Prepare BlueCat Address Manager™ (BAM)
 
 - Create a new Configuration for OpenStack updates, for example `OpenStack`.
 
@@ -41,23 +39,67 @@ All development has taken place against DevStack (upon Ubuntu 16.10), installati
 
 - Create IPv4 public and private blocks, for example `10.0.0.0/8 [OpenStack Public]` and `192.168.0.0/16 [OpenStack Private]`
 
-Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically created if not already present
-
-
-
+Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically created if not already present. However parent blocks must already exist in the Bluecat Address Manager
 
 #### Install the BlueCat Neutron Driver patch on DevStack
 
-- Backup the existing requests.py file on the Neutron node in the /opt/stack/neutron/neutron/ipam/ directory.
+- Edit the local.conf for Devstack to pull the BlueCat OpenStack Neutron IPAM Driver from GitHUB and set driver parameters
 
-- Backup the existing driver.py file on the Neutron node in the /opt/stack/neutron/neutron/ipam/drivers/neutrondb_ipam directory.
+		enable_plugin bluecatopenstack https://github.com/indigo360/bluecat-openstack-drivers.git 0.6.0
+		enable_service bluecatopenstack
 
-- Copy the new requests.py to the /opt/stack/neutron/neutron/ipam/ directory.
+		bam_address=192.168.1.100
+		bam_api_user=openstack
+		bam_api_pass=openstack
+		bam_config_name=OpenStack
+		bam_ipv4_public_block=10.0.0.0/8
+		bam_ipv4_private_block=192.168.1.0/24
+		bam_ipv4_private_network=192.168.1.0/26
+		bam_ipv4_private_iprange_startip=192.168.1.2
+		bam_ipv4_private_iprange_endip=192.168.1.62
+		bam_ipv4_private_iprange_gw=192.168.1.254
+		bam_ipv6_public_block=2000::/3
+		bam_ipv6_private_block=FC00::/6
+		bam_dns_zone=bluecat.lab
+		bam_updatemodify_networks=True
 
-- Copy the new driver.py to the /opt/stack/neutron/neutron/ipam/drivers/neutrondb_ipam directory, taking care not to  overwrite /opt/stack/neutron/neutron/driver/driver.py.
+- Run stack.sh to stack Devstack
+
+- Post installation check the driver is installed by running `pip show bluecatopenstack`.
+
+		Name: bluecatopenstack
+		Version: 0.6.0
+		Summary: Bluecat Networks Openstack Drivers
+		Home-page: https://github.com/indigo360/bluecat-openstack-drivers
+		Author: B.Shorland
+		Author-email: bshorland@bluecatnetworks.com
+		License: Apache-2
+		Location: /usr/lib/python2.7/site-packages
+		Requires: dnspython, configparser, ipaddress, suds, pprint
 
 - Copy the new driver.ini to the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory.
 
+#### Install the BlueCat Neutron Driver patch on Openstack
+
+- Clone the git repo with 
+
+- Build the driver with `python setup.py install`
+
+- Post installation check the driver is installed by running `pip show bluecatopenstack`
+
+		Name: bluecatopenstack
+		Version: 0.6.0
+		Summary: Bluecat Networks Openstack Drivers
+		Home-page: https://github.com/indigo360/bluecat-openstack-drivers
+		Author: B.Shorland
+		Author-email: bshorland@bluecatnetworks.com
+		License: Apache-2
+		Location: /usr/lib/python2.7/site-packages
+		Requires: dnspython, configparser, ipaddress, suds, pprint
+
+- Adjust Neutron.conf to call the bluecatopenstack drivers
+
+		IPAM_Driver = bluecatopenstack
 
 #### Configure The BlueCat OpenStack driver
 
@@ -80,46 +122,6 @@ Edit 'driver.ini' as required for your environment:
 	bam_ipv6_private_block=FC00::/6
 	bam_dns_zone=bluecat.lab
 	bam_updatemodify_networks=True
-
-
-
-##### For versions up to V0.12
-
-The `driver.py` has the following variables which must be set during installation within the python source:
-
-	BAM_ADDRESS="192.168.1.100"
-	BAM_API_USER="openstack"
-	BAM_API_PASS="openstack"
-	BAM_CONFIG_NAME="OpenStack"
-	BAM_IPV4_PUBLIC_BLOCK="10.0.0.0/8"
-	BAM_IPV4_PRIVATE_BLOCK="192.168.1.0/24"
-	BAM_IPV4_PRIVATE_NETWORK="192.168.1.0/26"
-	BAM_IPV4_PRIVATE_IPRANGE_STARTIP="192.168.1.2"
-	BAM_IPV4_PRIVATE_IPRANGE_ENDIP="192.168.1.62"
-	BAM_IPV4_PRIVATE_IPRANGE_GW="192.168.1.254"
-	BAM_IPV6_PUBLIC_BLOCK="2000::/3"
-	BAM_IPV6_PRIVATE_BLOCK="FC00::/6"
-	BAM_DNS_ZONE="bluecat.lab"
-
-
-#### Configuring the DevStack local.conf
-
-Nova and Neutron must be configured to state changes and notifications, the transport_url should be configured to the local rabbitmq instance, if using devstack add the following additions to the local.conf
-
-	[[post-config|$NOVA_CONF]]
-	[DEFAULT]
-	use_syslog = True
-	notify_on_state_change=vm_state
-
-	[[post-config|$NEUTRON_CONF]]
-	[DEFAULT]
-	notify_nova_on_port_status_changes = true
-	notify_nova_on_port_data_changes = true
-	control_exchange = neutron
-	notification_topics = notifications
-	transport_url = rabbit://stackrabbit:bluecat@192.168.1.70:5672/
-	notification_driver = messagingv2
-
 
 #### Installing the Bluecat Nova Monitor
 

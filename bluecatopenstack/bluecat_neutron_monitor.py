@@ -32,14 +32,26 @@ import dns.exception
 import string
 import ipaddress
 import datetime
-import sys, optparse
+import sys
 import json
 import logging as log
 from kombu import BrokerConnection
 from kombu import Exchange
 from kombu import Queue
 from kombu.mixins import ConsumerMixin
-from configparser import ConfigParser
+
+from oslo_config import cfg
+from oslo_service import service
+import oslo_messaging
+
+bluecat_neutron_parameters = [
+    cfg.StrOpt('bcn_neutron_transport_url', default=None, help=("BlueCat Neutron Monitor Transport URL")),
+    cfg.StrOpt('bcn_neutron_nameserver', default=None, help=("BlueCat Neutron Monitor NameServer")),
+    cfg.StrOpt('bcn_neutron_logfile', default=None, help=("BlueCat Neutron Monitor LogFile")),
+    cfg.StrOpt('bcn_neutron_ttl', default=None, help=("BlueCat Neutron Monitor TTL")),
+    cfg.StrOpt('bcn_neutron_domain_override', default=None, help=("BlueCat Neutron Monitor Domain Overide")),
+    cfg.StrOpt('bcn_neutron_debuglevel', default=None, help=("BlueCat Neutron Monitor Debug Level")),
+    cfg.StrOpt('bcn_neutron_replace', default=None, help=("BlueCat Neutron Monitor Replace Policy"))]
 
 version = 1.0
 
@@ -56,27 +68,36 @@ PORT_U_START="port.update.start"
 PORT_U_END="port.update.end"
 ADDITIONAL_RDCLASS = 65535
 
-# read in bluecat.conf configuration settings
+bluecat_group = cfg.OptGroup(name='bluecat',title='Bluecat Group')
 
-config = ConfigParser()
-config.read('bluecat.conf')
-monitor_broker = config.get('bluecat_neutron_monitor','broker_uri')
-monitor_nameserver = config.get('bluecat_neutron_monitor', 'nameserver')
-monitor_logfile = config.get('bluecat_neutron_monitor', 'logfile')
-monitor_ttl = config.get('bluecat_neutron_monitor', 'ttl')
-monitor_domain_override = config.get('bluecat_neutron_monitor','domain_override')
-monitor_debuglevel = config.get('bluecat_neutron_monitor','debuglevel')
-monitor_replace = config.get('bluecat_neutron_monitor','replace')
+def config_parser(conf,list):
+	CONF = cfg.CONF
+	CONF.register_group(bluecat_group)
+	CONF.register_opts(list, "bluecat")
+	CONF(default_config_files=conf)
+	return CONF
 
-print 'AMQ URI = ',monitor_broker
-print 'Sending DDNS Updates to BDDS =',monitor_nameserver
-print 'Debug Logging =',monitor_logfile
-print 'Debug Level = ',monitor_debuglevel
-print 'DDNS TTL =',monitor_ttl
-print 'Domain Override',monitor_domain_override
-print 'Replace Fixed RRs with Floating IP RRs', monitor_replace
+# read in settings from neutron.conf
 
-# Set INFO to DEBUG to see the RabbitMQ BODY messages
+NEUTRON_CONF=config_parser(['/etc/neutron/neutron.conf'],bluecat_neutron_parameters)
+
+monitor_broker = NEUTRON_CONF.bluecat.bcn_neutron_transport_url
+monitor_nameserver = NEUTRON_CONF.bluecat.bcn_neutron_nameserver
+monitor_logfile = NEUTRON_CONF.bluecat.bcn_neutron_logfile
+monitor_ttl = NEUTRON_CONF.bluecat.bcn_neutron_ttl
+monitor_domain_override = NEUTRON_CONF.bluecat.bcn_neutron_domain_override
+monitor_debuglevel = NEUTRON_CONF.bluecat.bcn_neutron_debuglevel
+monitor_replace = NEUTRON_CONF.bluecat.bcn_neutron_replace
+
+print 'BlueCat Neutron Monitor Transport URL = ',monitor_broker
+print 'BlueCat Neutron Monitor NameServer =',monitor_nameserver
+print 'BlueCat Neutron Monitor Logfile =',monitor_logfile
+print 'BlueCat Neutron Monitor Debug Level = ',monitor_debuglevel
+print 'BlueCat Nuetron Monitor TTL =',monitor_ttl
+print 'BlueCat Nuetron Monitor Domain Override = ',monitor_domain_override
+print 'BlueCat Nuetron Monitor Replace = ',monitor_replace
+
+# read from Nuetron.conf [bluecat] settings parameters bcn_neutron_debuglevel and bcn_neutron_logfile
 log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
 
 def stripptr(substr, str):
@@ -171,7 +192,6 @@ def addFWD(name,ttl,ipaddress):
 		log.debug ('[addFWD] - IPv6')
 
 		if monitor_replace == "False":
-		if monitor_replace == False:
 			update.add(hostname,monitor_ttl,dns.rdatatype.AAAA, ipaddress)
 		else:
 			update.replace(hostname,monitor_ttl,dns.rdatatype.AAAA, ipaddress)
