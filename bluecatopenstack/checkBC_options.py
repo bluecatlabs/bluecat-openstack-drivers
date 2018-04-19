@@ -27,6 +27,7 @@ bluecat_neutron_parameters = [
     cfg.StrOpt('bcn_neutron_ttl', default=None, help=_("BlueCat Neutron Monitor TTL")),
     cfg.StrOpt('bcn_neutron_domain_override', default=None, help=_("BlueCat Neutron Monitor Domain Overide")),
     cfg.StrOpt('bcn_neutron_debuglevel', default=None, help=_("BlueCat Neutron Monitor Debug Level")),
+    cfg.StrOpt('bcn_neutron_TSIG', default=None, help=_("BlueCat Domain TSIG Keys")),
     cfg.StrOpt('bcn_neutron_replace', default=None, help=_("BlueCat Neutron Monitor Replace Policy"))]
 
 bluecat_nova_parameters = [
@@ -35,6 +36,7 @@ bluecat_nova_parameters = [
     cfg.StrOpt('bcn_nova_logfile', default=None, help=_("BlueCat Nova Monitor Logfile")),
     cfg.StrOpt('bcn_nova_ttl', default=None, help=_("BlueCat Nova Monitor TTL")),
     cfg.StrOpt('bcn_nova_domain_override', default=None, help=_("BlueCat Nova Monitor Domain Override")),
+    cfg.StrOpt('bcn_nova_TSIG', default=None, help=_("BlueCat Domain TSIG Keys")),
     cfg.StrOpt('bcn_nova_debuglevel', default=None, help=_("BlueCat Nova Monitor Debug Level"))]
 
 bluecat_group = cfg.OptGroup(name='bluecat',title='Bluecat Group')
@@ -61,6 +63,7 @@ bam_ipv6_public_block = NEUTRON_CONF.bluecat.bam_ipv6_public_block
 bam_ipv6_private_block = NEUTRON_CONF.bluecat.bam_ipv6_private_block
 bam_dns_zone = NEUTRON_CONF.bluecat.bam_dns_zone
 bam_updatemodify_networks = NEUTRON_CONF.bluecat.bam_updatemodify_networks
+bcn_nova_TSIG = NEUTRON_CONF.bluecat.bcn_nova_TSIG
 
 bcn_neutron_transport_url = NEUTRON_CONF.bluecat.bcn_neutron_transport_url
 bcn_neutron_nameserver = NEUTRON_CONF.bluecat.bcn_neutron_nameserver
@@ -69,6 +72,8 @@ bcn_neutron_ttl = NEUTRON_CONF.bluecat.bcn_neutron_ttl
 bcn_neutron_domain_override = NEUTRON_CONF.bluecat.bcn_neutron_domain_override
 bcn_neutron_debuglevel = NEUTRON_CONF.bluecat.bcn_neutron_debuglevel
 bcn_neutron_replace = NEUTRON_CONF.bluecat.bcn_neutron_replace
+bcn_neutron_TSIG = NEUTRON_CONF.bluecat.bcn_neutron_TSIG
+
 
 
 ipam_driver = NEUTRON_CONF.ipam_driver
@@ -111,6 +116,7 @@ print "BlueCat Neutron Monitor TTL:\033[0;32m %s \033[1;m" % bcn_neutron_ttl
 print "BlueCat Neutron Monitor Domain Override:\033[0;32m %s \033[1;m" % bcn_neutron_domain_override
 print "BlueCat Neutron Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_neutron_debuglevel
 print "BlueCat Neutron Monitor Replace Policy:\033[0;32m %s \033[1;m" % bcn_neutron_replace
+print "BlueCat Neutron TSIG:\033[0;32m %s \033[1;m" % bcn_neutron_TSIG
 print ""
 print "NOVA.CONF"
 print "[BLUECAT]"
@@ -120,4 +126,5 @@ print "BlueCat Nova Logfile:\033[0;32m %s \033[1;m" % bcn_nova_logfile
 print "BlueCat Nova Monitor TTL:\033[0;32m %s \033[1;m" % bcn_nova_ttl
 print "BlueCat Nova Monitor Domain Override:\033[0;32m %s \033[1;m" % bcn_nova_domain_override
 print "BlueCat Nova Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_nova_debuglevel
+print "BlueCat Nova TSIG:\033[0;32m %s \033[1;m" % bcn_neutron_TSIG
 print ""
