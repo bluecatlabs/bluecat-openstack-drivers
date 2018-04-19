@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # Checks for the bluecat driver parameters in the nova/neutron.conf files
+# B.Shorland Bluecat Networks
 
 import sys
 from oslo_config import cfg
