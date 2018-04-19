@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Checks for the bluecat driver parameters in the nova/neutron.conf files
+
 import sys
 from oslo_config import cfg
 from neutron.common import config as common_config
