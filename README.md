@@ -44,10 +44,10 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 
 - Edit the local.conf for Devstack to pull the BlueCat OpenStack Neutron IPAM Driver from GitHUB and set driver parameters
 
-		enable_plugin bluecatopenstack https://github.com/bluecatlabs/bluecat-openstack-drivers.git 0.2
-		enable_service bluecatopenstack
+	enable_plugin bluecatopenstack https://github.com/bluecatlabs/bluecat-openstack-drivers.git 0.2
+	enable_service bluecatopenstack
 
-		bam_address=192.168.1.100
+	bam_address=192.168.1.100
 		bam_api_user=openstack
 		bam_api_pass=openstack
 		bam_config_name=OpenStack
