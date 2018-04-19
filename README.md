@@ -77,7 +77,7 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 		bcn_neutron_debuglevel=DEBUG 
 		bcn_neutron_replace=False
 
-- Run stack.sh to stack Devstack
+- Run stack.sh to stack Devstack, during stacking Devstack will correctly assigned the parameters defined in the local.conf into the nova/neutron.conf files automatically
 
 - Post installation check the driver is installed by running `pip show bluecatopenstack`.
 
@@ -115,7 +115,7 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 
 		IPAM_Driver = bluecatopenstack
 		
-- Adjust Neutron.conf adding the [Bluecat] section
+- Adjust Neutron.conf adding the [Bluecat] section with parameters for the driver defined
 
 		[bluecat]
 		bam_address=192.168.1.100
@@ -133,16 +133,6 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 		bam_dns_zone=bluecat.lab
 		bam_updatemodify_networks=True
 		
-		bcn_neutron_transport_url=amqp://stackrabbit:nintendo@localhost:5672//
-  		bcn_neutron_nameserver=192.168.1.102
- 		bcn_neutron_logfile=/home/brian/devstack/bluecat_neutron.log
-  		bcn_neutron_ttl=666
-  		bcn_neutron_domain_override=False
-  		bcn_neutron_debuglevel=DEBUG 
-  		bcn_neutron_replace=False
-		
-		
-
 #### Configure The BlueCat OpenStack driver
 
 ##### For version V0.13 and above
@@ -179,6 +169,8 @@ Edit the nova.conf to add the Bluecat parameters
 
 Copy the `bluecat_nova_monitor.py` from /opt/stack/neutron/bluecatopenstack/bluecatopenstack to a suitable location (such as `/opt/bluecat`)
 
+Run the `bluecat_nova_monitor.py` code
+
 #### Installing the Bluecat Neutron Monitor
 
 Edit the neutron.conf to add the Bluecat parameters
@@ -192,6 +184,8 @@ Edit the neutron.conf to add the Bluecat parameters
 	bcn_nova_debuglevel=DEBUG
 
 Copy the `bluecat_neutron_monitor.py` from /opt/stack/neutron/bluecatopenstack/bluecatopenstackto a suitable location (such as `/opt/bluecat`)
+
+Run the `bluecat_neutron_monitor.py` code
 
 ## Contributions
 Contributing follows a review process: before a update is accepted it will be reviewed and then merged into the master branch.
