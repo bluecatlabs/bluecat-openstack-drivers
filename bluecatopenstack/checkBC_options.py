@@ -115,7 +115,7 @@ print "BlueCat Neutron Monitor TTL:\033[0;32m %s \033[1;m" % bcn_neutron_ttl
 print "BlueCat Neutron Monitor Domain Override:\033[0;32m %s \033[1;m" % bcn_neutron_domain_override
 print "BlueCat Neutron Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_neutron_debuglevel
 print "BlueCat Neutron Monitor Replace Policy:\033[0;32m %s \033[1;m" % bcn_neutron_replace
-print "BlueCat Neutron TSIG Keys: Policy:\033[0;32m %s \033[1;m" %bcn_neutron_TSIG
+print "BlueCat Neutron TSIG Keys: \033[0;32m %s \033[1;m" %bcn_neutron_TSIG
 print ""
 print "NOVA.CONF"
 print "[BLUECAT]"
