@@ -54,9 +54,9 @@ bluecat_nova_parameters = [
     cfg.StrOpt('bcn_nova_transport_url', default=None, help=("BlueCat Nova Monitor Transport URL")),
     cfg.StrOpt('bcn_nova_nameserver', default=None, help=("BlueCat Nova Monitor NameServer")),
     cfg.StrOpt('bcn_nova_logfile', default=None, help=("BlueCat Nova Monitor Logfile")),
-    cfg.StrOpt('bcn_nova_ttl', default=None, help=("BlueCat Nova Monitor TTL")),
-    cfg.StrOpt('bcn_nova_domain_override', default=None, help=("BlueCat Nova Monitor Domain Override")),
-    cfg.StrOpt('bcn_nova_debuglevel', default=None, help=("BlueCat Nova Monitor Debug Level"))]
+    cfg.StrOpt('bcn_nova_ttl', default=666, help=("BlueCat Nova Monitor TTL")),
+    cfg.StrOpt('bcn_nova_domain_override', default=False, help=("BlueCat Nova Monitor Domain Override")),
+    cfg.StrOpt('bcn_nova_debuglevel', default=INFO, help=("BlueCat Nova Monitor Debug Level"))]
 
 version = 1.0
 EXCHANGE_NAME="nova"
