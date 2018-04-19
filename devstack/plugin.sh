@@ -42,16 +42,16 @@ function configure_bluecat_openstack {
     update_conf_option $NOVA_CONF DEFAULT notification_topics notifications 0
     update_conf_option $NOVA_CONF DEFAULT notify_on_state_change vm_state 0
     update_conf_option $NOVA_CONF DEFAULT use_syslog True 0
-    
+
     # Set parameters in Neutron.conf
     update_conf_option $NEUTRON_CONF DEFAULT notification_driver messagingv2 0
     update_conf_option $NEUTRON_CONF DEFAULT notification_topics notifications 0
     update_conf_option $NEUTRON_CONF DEFAULT notify_nova_on_port_status_changes true 0
     update_conf_option $NEUTRON_CONF DEFAULT notify_nova_on_port_data_changes true 0
     update_conf_option $NEUTRON_CONF DEFAULT control_exchange neutron 0
-    
+
     # Set bluecat parameters in Neutron.conf
-    
+
     iniset $NEUTRON_CONF bluecat bam_address $bam_address
     iniset $NEUTRON_CONF bluecat bam_api_user $bam_api_user
     iniset $NEUTRON_CONF bluecat bam_api_pass $bam_api_pass
@@ -73,7 +73,8 @@ function configure_bluecat_openstack {
     iniset $NEUTRON_CONF bluecat bcn_neutron_domain_override $bcn_neutron_domain_override
     iniset $NEUTRON_CONF bluecat bcn_neutron_debuglevel $bcn_neutron_debuglevel
     iniset $NEUTRON_CONF bluecat bcn_neutron_replace $bcn_neutron_replace
-    
+    iniset $NOVA_CONF bluecat bcn_nova_TSIG $bcn_nova_TSIG
+
      # Set bluecat parameters in nova.conf
     iniset $NOVA_CONF bluecat bcn_nova_transport_url $bcn_nova_transport_url
     iniset $NOVA_CONF bluecat bcn_nova_nameserver $bcn_nova_nameserver
@@ -81,6 +82,7 @@ function configure_bluecat_openstack {
     iniset $NOVA_CONF bluecat bcn_nova_ttl $bcn_nova_ttl
     iniset $NOVA_CONF bluecat bcn_nova_domain_override $bcn_nova_domain_override
     iniset $NOVA_CONF bluecat bcn_nova_debuglevel $bcn_nova_debuglevel
+    iniset $NOVA_CONF bluecat bcn_nova_TSIG $bcn_nova_TSIG
 }
 
 DIR_BLUECAT=$DEST/bluecatopenstack
