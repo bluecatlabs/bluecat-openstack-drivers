@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-# Checks for the bluecat driver parameters in the nova/neutron.conf files
-# B.Shorland Bluecat Networks
-
 import sys
 from oslo_config import cfg
+from neutron.common import config as common_config
+from oslo_service import service
+import oslo_messaging as om
+from pprint import pprint
 
 bluecat_neutron_parameters = [
     cfg.StrOpt('bam_api_user', default=None, help=("BlueCat Address Manager API User")),
@@ -23,19 +24,19 @@ bluecat_neutron_parameters = [
     cfg.StrOpt('bcn_neutron_transport_url', default=None, help=("BlueCat Neutron Monitor Transport URL")),
     cfg.StrOpt('bcn_neutron_nameserver', default=None, help=("BlueCat Neutron Monitor NameServer")),
     cfg.StrOpt('bcn_neutron_logfile', default=None, help=("BlueCat Neutron Monitor LogFile")),
-    cfg.StrOpt('bcn_neutron_ttl', default=666, help=("BlueCat Neutron Monitor TTL")),
+    cfg.StrOpt('bcn_neutron_ttl', default=None, help=("BlueCat Neutron Monitor TTL")),
     cfg.StrOpt('bcn_neutron_domain_override', default=None, help=("BlueCat Neutron Monitor Domain Overide")),
     cfg.StrOpt('bcn_neutron_debuglevel', default="INFO", help=("BlueCat Neutron Monitor Debug Level")),
-    cfg.DictOpt('bcn_neutron_TSIG', default=None, help=("BlueCat Domain TSIG Keys")),
-    cfg.StrOpt('bcn_neutron_replace', default=False, help=("BlueCat Neutron Monitor Replace Policy"))]
+    cfg.DictOpt('bcn_neutron_TSIG', default=None, help=("BlueCat Neutron TSIG")),
+    cfg.StrOpt('bcn_neutron_replace', default=None, help=("BlueCat Neutron Monitor Replace Policy"))]
 
 bluecat_nova_parameters = [
     cfg.StrOpt('bcn_nova_transport_url', default=None, help=("BlueCat Nova Monitor Transport URL")),
     cfg.StrOpt('bcn_nova_nameserver', default=None, help=("BlueCat Nova Monitor NameServer")),
     cfg.StrOpt('bcn_nova_logfile', default=None, help=("BlueCat Nova Monitor Logfile")),
-    cfg.StrOpt('bcn_nova_ttl', default=666, help=("BlueCat Nova Monitor TTL")),
-    cfg.StrOpt('bcn_nova_domain_override', default=False, help=("BlueCat Nova Monitor Domain Override")),
-    cfg.DictOpt('bcn_nova_TSIG', default=None, help=("BlueCat Domain TSIG Keys")),
+    cfg.StrOpt('bcn_nova_ttl', default=None, help=("BlueCat Nova Monitor TTL")),
+    cfg.StrOpt('bcn_nova_domain_override', default=None, help=("BlueCat Nova Monitor Domain Override")),
+    cfg.DictOpt('bcn_nova_TSIG', default=None, help=("BlueCat Nova TSIG")),
     cfg.StrOpt('bcn_nova_debuglevel', default="INFO", help=("BlueCat Nova Monitor Debug Level"))]
 
 bluecat_group = cfg.OptGroup(name='bluecat',title='Bluecat Group')
@@ -73,8 +74,8 @@ bcn_neutron_replace = NEUTRON_CONF.bluecat.bcn_neutron_replace
 bcn_neutron_TSIG = NEUTRON_CONF.bluecat.bcn_neutron_TSIG
 
 
-
 ipam_driver = NEUTRON_CONF.ipam_driver
+#transport_url = NEUTRON_CONF.transport_url
 
 NOVA_CONF=config_parser(['/etc/nova/nova.conf'],bluecat_nova_parameters)
 
@@ -86,6 +87,8 @@ bcn_nova_domain_override = NOVA_CONF.bluecat.bcn_nova_domain_override
 bcn_nova_debuglevel = NOVA_CONF.bluecat.bcn_nova_debuglevel
 bcn_nova_TSIG = NOVA_CONF.bluecat.bcn_nova_TSIG
 
+#transport_url = NOVA_CONF.transport_url
+
 print "NEUTRON.CONF"
 print "[DEFAULT]"
 print "Neutron IPAM Driver:\033[0;32m %s \033[1;m" % ipam_driver
@@ -95,7 +98,7 @@ print "[BLUECAT]"
 print "BlueCat Address Manager API User:\033[0;32m  %s \033[1;m" % bam_api_user
 print "BlueCat Address Manager API Password:\033[0;32m %s \033[1;m" % bam_api_pass
 print "BlueCat Configuration Name:\033[0;32m %s \033[1;m" % bam_config_name
-print "BlucCat IPv4 Public Block:\033[0;32m %s \033[1;m" % bam_ipv4_public_block
+print "BlueCat IPv4 Public Block:\033[0;32m %s \033[1;m" % bam_ipv4_public_block
 print "BlueCat IPv4 Private Block:\033[0;32m %s \033[1;m" % bam_ipv4_private_block
 print "BlueCat IPv4 Private Network:\033[0;32m %s \033[1;m" % bam_ipv4_private_network
 print "BlueCat IPv4 Private Range Start IP:\033[0;32m %s \033[1;m" % bam_ipv4_private_iprange_startip
@@ -112,7 +115,7 @@ print "BlueCat Neutron Monitor TTL:\033[0;32m %s \033[1;m" % bcn_neutron_ttl
 print "BlueCat Neutron Monitor Domain Override:\033[0;32m %s \033[1;m" % bcn_neutron_domain_override
 print "BlueCat Neutron Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_neutron_debuglevel
 print "BlueCat Neutron Monitor Replace Policy:\033[0;32m %s \033[1;m" % bcn_neutron_replace
-print "BlueCat Neutron TSIG:\033[0;32m %s \033[1;m" % bcn_neutron_TSIG
+print "BlueCat Neutron TSIG Keys: Policy:\033[0;32m %s \033[1;m" %bcn_neutron_TSIG
 print ""
 print "NOVA.CONF"
 print "[BLUECAT]"
@@ -122,5 +125,14 @@ print "BlueCat Nova Logfile:\033[0;32m %s \033[1;m" % bcn_nova_logfile
 print "BlueCat Nova Monitor TTL:\033[0;32m %s \033[1;m" % bcn_nova_ttl
 print "BlueCat Nova Monitor Domain Override:\033[0;32m %s \033[1;m" % bcn_nova_domain_override
 print "BlueCat Nova Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_nova_debuglevel
-print "BlueCat Nova TSIG:\033[0;32m %s \033[1;m" % bcn_nova_TSIG
+print "BlueCat Nova TSIG Keys: \033[0;32m %s \033[1;m" %bcn_nova_TSIG
 print ""
+
+print "Domains which have TSIG keys:"
+if bcn_nova_TSIG.keys():
+	securedomains = bcn_nova_TSIG.keys()
+	for i in range(len(securedomains)):
+		print "Domain: \033[0;32m %s \033[1;m" %(securedomains[i])
+		print "Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[securedomains[i]])
+
+
