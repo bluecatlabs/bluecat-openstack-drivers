@@ -88,7 +88,7 @@ bcn_nova_logfile = NOVA_CONF.bluecat.bcn_nova_logfile
 bcn_nova_ttl = NOVA_CONF.bluecat.bcn_nova_ttl
 bcn_nova_domain_override = NOVA_CONF.bluecat.bcn_nova_domain_override
 bcn_nova_debuglevel = NOVA_CONF.bluecat.bcn_nova_debuglevel
-bcn_nova_TSIG = NEUTRON_CONF.bluecat.bcn_nova_TSIG
+bcn_nova_TSIG = NOVA_CONF.bluecat.bcn_nova_TSIG
 
 print "NEUTRON.CONF"
 print "[DEFAULT]"
