@@ -112,9 +112,7 @@ if is_service_enabled bluecatopenstack; then
     fi
 
     if [[ "$1" == "clean" ]]; then
-        # Remove state and transient data
-        # Remember clean.sh first calls unstack.sh
-        # no-op
+        # No longer used
         :
     fi
 fi

@@ -77,7 +77,6 @@ bcn_neutron_TSIG = NEUTRON_CONF.bluecat.bcn_neutron_TSIG
 
 
 ipam_driver = NEUTRON_CONF.ipam_driver
-#transport_url = NEUTRON_CONF.transport_url
 
 NOVA_CONF=config_parser(['/etc/nova/nova.conf'],bluecat_nova_parameters)
 
@@ -87,8 +86,6 @@ bcn_nova_logfile = NOVA_CONF.bluecat.bcn_nova_logfile
 bcn_nova_ttl = NOVA_CONF.bluecat.bcn_nova_ttl
 bcn_nova_domain_override = NOVA_CONF.bluecat.bcn_nova_domain_override
 bcn_nova_debuglevel = NOVA_CONF.bluecat.bcn_nova_debuglevel
-
-#transport_url = NOVA_CONF.transport_url
 
 print "NEUTRON.CONF"
 print "[DEFAULT]"
