@@ -73,7 +73,7 @@ function configure_bluecat_openstack {
     iniset $NEUTRON_CONF bluecat bcn_neutron_domain_override $bcn_neutron_domain_override
     iniset $NEUTRON_CONF bluecat bcn_neutron_debuglevel $bcn_neutron_debuglevel
     iniset $NEUTRON_CONF bluecat bcn_neutron_replace $bcn_neutron_replace
-    iniset $NOVA_CONF bluecat bcn_nova_TSIG $bcn_nova_TSIG
+    iniset $NEUTRON_CONF bluecat bcn_nova_TSIG $bcn_neutron_TSIG
 
      # Set bluecat parameters in nova.conf
     iniset $NOVA_CONF bluecat bcn_nova_transport_url $bcn_nova_transport_url

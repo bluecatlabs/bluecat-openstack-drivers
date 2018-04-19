@@ -27,20 +27,20 @@ bluecat_neutron_parameters = [
     cfg.StrOpt('bcn_neutron_transport_url', default=None, help=_("BlueCat Neutron Monitor Transport URL")),
     cfg.StrOpt('bcn_neutron_nameserver', default=None, help=_("BlueCat Neutron Monitor NameServer")),
     cfg.StrOpt('bcn_neutron_logfile', default=None, help=_("BlueCat Neutron Monitor LogFile")),
-    cfg.StrOpt('bcn_neutron_ttl', default=None, help=_("BlueCat Neutron Monitor TTL")),
+    cfg.StrOpt('bcn_neutron_ttl', default=666 help=_("BlueCat Neutron Monitor TTL")),
     cfg.StrOpt('bcn_neutron_domain_override', default=None, help=_("BlueCat Neutron Monitor Domain Overide")),
-    cfg.StrOpt('bcn_neutron_debuglevel', default=None, help=_("BlueCat Neutron Monitor Debug Level")),
+    cfg.StrOpt('bcn_neutron_debuglevel', default=INFO, help=_("BlueCat Neutron Monitor Debug Level")),
     cfg.StrOpt('bcn_neutron_TSIG', default=None, help=_("BlueCat Domain TSIG Keys")),
-    cfg.StrOpt('bcn_neutron_replace', default=None, help=_("BlueCat Neutron Monitor Replace Policy"))]
+    cfg.StrOpt('bcn_neutron_replace', default=False, help=_("BlueCat Neutron Monitor Replace Policy"))]
 
 bluecat_nova_parameters = [
     cfg.StrOpt('bcn_nova_transport_url', default=None, help=_("BlueCat Nova Monitor Transport URL")),
     cfg.StrOpt('bcn_nova_nameserver', default=None, help=_("BlueCat Nova Monitor NameServer")),
     cfg.StrOpt('bcn_nova_logfile', default=None, help=_("BlueCat Nova Monitor Logfile")),
-    cfg.StrOpt('bcn_nova_ttl', default=None, help=_("BlueCat Nova Monitor TTL")),
-    cfg.StrOpt('bcn_nova_domain_override', default=None, help=_("BlueCat Nova Monitor Domain Override")),
+    cfg.StrOpt('bcn_nova_ttl', default=666, help=_("BlueCat Nova Monitor TTL")),
+    cfg.StrOpt('bcn_nova_domain_override', default=False, help=_("BlueCat Nova Monitor Domain Override")),
     cfg.StrOpt('bcn_nova_TSIG', default=None, help=_("BlueCat Domain TSIG Keys")),
-    cfg.StrOpt('bcn_nova_debuglevel', default=None, help=_("BlueCat Nova Monitor Debug Level"))]
+    cfg.StrOpt('bcn_nova_debuglevel', default=INFO, help=_("BlueCat Nova Monitor Debug Level"))]
 
 bluecat_group = cfg.OptGroup(name='bluecat',title='Bluecat Group')
 
@@ -66,7 +66,6 @@ bam_ipv6_public_block = NEUTRON_CONF.bluecat.bam_ipv6_public_block
 bam_ipv6_private_block = NEUTRON_CONF.bluecat.bam_ipv6_private_block
 bam_dns_zone = NEUTRON_CONF.bluecat.bam_dns_zone
 bam_updatemodify_networks = NEUTRON_CONF.bluecat.bam_updatemodify_networks
-bcn_nova_TSIG = NEUTRON_CONF.bluecat.bcn_nova_TSIG
 
 bcn_neutron_transport_url = NEUTRON_CONF.bluecat.bcn_neutron_transport_url
 bcn_neutron_nameserver = NEUTRON_CONF.bluecat.bcn_neutron_nameserver
@@ -89,6 +88,7 @@ bcn_nova_logfile = NOVA_CONF.bluecat.bcn_nova_logfile
 bcn_nova_ttl = NOVA_CONF.bluecat.bcn_nova_ttl
 bcn_nova_domain_override = NOVA_CONF.bluecat.bcn_nova_domain_override
 bcn_nova_debuglevel = NOVA_CONF.bluecat.bcn_nova_debuglevel
+bcn_nova_TSIG = NEUTRON_CONF.bluecat.bcn_nova_TSIG
 
 print "NEUTRON.CONF"
 print "[DEFAULT]"
