@@ -11,36 +11,36 @@ import oslo_messaging as om
 from pprint import pprint
 
 bluecat_neutron_parameters = [
-    cfg.StrOpt('bam_api_user', default=None, help=_("BlueCat Address Manager API User")),
-    cfg.StrOpt('bam_api_pass', default=None, help=_("BlueCat Address Manager API Password")),
-    cfg.StrOpt('bam_config_name', default=None, help=_("BlueCat Configuration")),
-    cfg.StrOpt('bam_ipv4_public_block', default=None, help=_("BlueCat IPv4 Public Block")),
-    cfg.StrOpt('bam_ipv4_private_block', default=None, help=_("BlueCat IPv4 Private Block")),
-    cfg.StrOpt('bam_ipv4_private_network', default=None, help=_("BlueCat IPv4 Private Network")),
-    cfg.StrOpt('bam_ipv4_private_iprange_startip', default=None, help=_("BlueCat IPv4 Private IP Range Start IP")),
-    cfg.StrOpt('bam_ipv4_private_iprange_endip', default=None, help=_("BlueCat IPv4 Private IP Range End IP")),
-    cfg.StrOpt('bam_ipv4_private_iprange_gw', default=None, help=_("BlueCat IPv4 Private IP Range Gateway")),
-    cfg.StrOpt('bam_ipv6_public_block', default=None, help=_("BlueCat IPv6 Public Block")),
-    cfg.StrOpt('bam_ipv6_private_block', default=None, help=_("BlueCat IPv6 Private Block")),
-    cfg.StrOpt('bam_dns_zone', default=None, help=_("BlueCat DNS Zone")),
-    cfg.StrOpt('bam_updatemodify_networks', default=True, help=_("BlueCat Update/Modify Networks Policy")),
-    cfg.StrOpt('bcn_neutron_transport_url', default=None, help=_("BlueCat Neutron Monitor Transport URL")),
-    cfg.StrOpt('bcn_neutron_nameserver', default=None, help=_("BlueCat Neutron Monitor NameServer")),
-    cfg.StrOpt('bcn_neutron_logfile', default=None, help=_("BlueCat Neutron Monitor LogFile")),
-    cfg.StrOpt('bcn_neutron_ttl', default=666 help=_("BlueCat Neutron Monitor TTL")),
-    cfg.StrOpt('bcn_neutron_domain_override', default=None, help=_("BlueCat Neutron Monitor Domain Overide")),
-    cfg.StrOpt('bcn_neutron_debuglevel', default=INFO, help=_("BlueCat Neutron Monitor Debug Level")),
-    cfg.StrOpt('bcn_neutron_TSIG', default=None, help=_("BlueCat Domain TSIG Keys")),
-    cfg.StrOpt('bcn_neutron_replace', default=False, help=_("BlueCat Neutron Monitor Replace Policy"))]
+    cfg.StrOpt('bam_api_user', default=None, help=("BlueCat Address Manager API User")),
+    cfg.StrOpt('bam_api_pass', default=None, help=("BlueCat Address Manager API Password")),
+    cfg.StrOpt('bam_config_name', default=None, help=("BlueCat Configuration")),
+    cfg.StrOpt('bam_ipv4_public_block', default=None, help=("BlueCat IPv4 Public Block")),
+    cfg.StrOpt('bam_ipv4_private_block', default=None, help=("BlueCat IPv4 Private Block")),
+    cfg.StrOpt('bam_ipv4_private_network', default=None, help=("BlueCat IPv4 Private Network")),
+    cfg.StrOpt('bam_ipv4_private_iprange_startip', default=None, help=("BlueCat IPv4 Private IP Range Start IP")),
+    cfg.StrOpt('bam_ipv4_private_iprange_endip', default=None, help=("BlueCat IPv4 Private IP Range End IP")),
+    cfg.StrOpt('bam_ipv4_private_iprange_gw', default=None, help=("BlueCat IPv4 Private IP Range Gateway")),
+    cfg.StrOpt('bam_ipv6_public_block', default=None, help=("BlueCat IPv6 Public Block")),
+    cfg.StrOpt('bam_ipv6_private_block', default=None, help=("BlueCat IPv6 Private Block")),
+    cfg.StrOpt('bam_dns_zone', default=None, help=("BlueCat DNS Zone")),
+    cfg.StrOpt('bam_updatemodify_networks', default=True, help=("BlueCat Update/Modify Networks Policy")),
+    cfg.StrOpt('bcn_neutron_transport_url', default=None, help=("BlueCat Neutron Monitor Transport URL")),
+    cfg.StrOpt('bcn_neutron_nameserver', default=None, help=("BlueCat Neutron Monitor NameServer")),
+    cfg.StrOpt('bcn_neutron_logfile', default=None, help=("BlueCat Neutron Monitor LogFile")),
+    cfg.StrOpt('bcn_neutron_ttl', default=666, help=("BlueCat Neutron Monitor TTL")),
+    cfg.StrOpt('bcn_neutron_domain_override', default=None, help=("BlueCat Neutron Monitor Domain Overide")),
+    cfg.StrOpt('bcn_neutron_debuglevel', default="INFO", help=("BlueCat Neutron Monitor Debug Level")),
+    cfg.DictOpt('bcn_neutron_TSIG', default=None, help=("BlueCat Domain TSIG Keys")),
+    cfg.StrOpt('bcn_neutron_replace', default=False, help=("BlueCat Neutron Monitor Replace Policy"))]
 
 bluecat_nova_parameters = [
-    cfg.StrOpt('bcn_nova_transport_url', default=None, help=_("BlueCat Nova Monitor Transport URL")),
-    cfg.StrOpt('bcn_nova_nameserver', default=None, help=_("BlueCat Nova Monitor NameServer")),
-    cfg.StrOpt('bcn_nova_logfile', default=None, help=_("BlueCat Nova Monitor Logfile")),
-    cfg.StrOpt('bcn_nova_ttl', default=666, help=_("BlueCat Nova Monitor TTL")),
-    cfg.StrOpt('bcn_nova_domain_override', default=False, help=_("BlueCat Nova Monitor Domain Override")),
-    cfg.StrOpt('bcn_nova_TSIG', default=None, help=_("BlueCat Domain TSIG Keys")),
-    cfg.StrOpt('bcn_nova_debuglevel', default=INFO, help=_("BlueCat Nova Monitor Debug Level"))]
+    cfg.StrOpt('bcn_nova_transport_url', default=None, help=("BlueCat Nova Monitor Transport URL")),
+    cfg.StrOpt('bcn_nova_nameserver', default=None, help=("BlueCat Nova Monitor NameServer")),
+    cfg.StrOpt('bcn_nova_logfile', default=None, help=("BlueCat Nova Monitor Logfile")),
+    cfg.StrOpt('bcn_nova_ttl', default=666, help=("BlueCat Nova Monitor TTL")),
+    cfg.StrOpt('bcn_nova_domain_override', default=False, help=("BlueCat Nova Monitor Domain Override")),
+    cfg.DictOpt('bcn_nova_TSIG', default=None, help=("BlueCat Domain TSIG Keys")),
+    cfg.StrOpt('bcn_nova_debuglevel', default="INFO", help=("BlueCat Nova Monitor Debug Level"))]
 
 bluecat_group = cfg.OptGroup(name='bluecat',title='Bluecat Group')
 
@@ -126,5 +126,5 @@ print "BlueCat Nova Logfile:\033[0;32m %s \033[1;m" % bcn_nova_logfile
 print "BlueCat Nova Monitor TTL:\033[0;32m %s \033[1;m" % bcn_nova_ttl
 print "BlueCat Nova Monitor Domain Override:\033[0;32m %s \033[1;m" % bcn_nova_domain_override
 print "BlueCat Nova Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_nova_debuglevel
-print "BlueCat Nova TSIG:\033[0;32m %s \033[1;m" % bcn_neutron_TSIG
+print "BlueCat Nova TSIG:\033[0;32m %s \033[1;m" % bcn_nova_TSIG
 print ""
