@@ -5,10 +5,6 @@
 
 import sys
 from oslo_config import cfg
-from neutron.common import config as common_config
-from oslo_service import service
-import oslo_messaging as om
-from pprint import pprint
 
 bluecat_neutron_parameters = [
     cfg.StrOpt('bam_api_user', default=None, help=("BlueCat Address Manager API User")),
