@@ -133,12 +133,15 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 		bam_dns_zone=bluecat.lab
 		bam_updatemodify_networks=True
 		
-		bcn_nova_transport_url=amqp://stackrabbit:nintendo@localhost:5672//
-		bcn_nova_nameserver=192.168.1.102
-		bcn_nova_logfile=/home/brian/devstack/bluecat_nova.log
-		bcn_nova_ttl=666
-		bcn_nova_domain_override=False 
-		bcn_nova_debuglevel=DEBUG 
+		bcn_neutron_transport_url=amqp://stackrabbit:nintendo@localhost:5672//
+  		bcn_neutron_nameserver=192.168.1.102
+ 		bcn_neutron_logfile=/home/brian/devstack/bluecat_neutron.log
+  		bcn_neutron_ttl=666
+  		bcn_neutron_domain_override=False
+  		bcn_neutron_debuglevel=DEBUG 
+  		bcn_neutron_replace=False
+		
+		
 
 #### Configure The BlueCat OpenStack driver
 
@@ -164,9 +167,29 @@ Edit 'driver.ini' as required for your environment:
 
 #### Installing the Bluecat Nova Monitor
 
+Edit the nova.conf to add the Bluecat parameters
+
+	[bluecat]
+	bcn_nova_transport_url=amqp://stackrabbit:nintendo@localhost:5672//
+	bcn_nova_nameserver=192.168.1.102
+	bcn_nova_logfile=/home/brian/devstack/bluecat_nova.log
+	bcn_nova_ttl=666
+	bcn_nova_domain_override=False 
+	bcn_nova_debuglevel=DEBUG
+
 Copy the `bluecat_nova_monitor.py` from /opt/stack/neutron/bluecatopenstack/bluecatopenstack to a suitable location (such as `/opt/bluecat`)
 
 #### Installing the Bluecat Neutron Monitor
+
+Edit the neutron.conf to add the Bluecat parameters
+
+	[bluecat]
+	bcn_nova_transport_url=amqp://stackrabbit:nintendo@localhost:5672//
+	bcn_nova_nameserver=192.168.1.102
+	bcn_nova_logfile=/home/brian/devstack/bluecat_nova.log
+	bcn_nova_ttl=666
+	bcn_nova_domain_override=False 
+	bcn_nova_debuglevel=DEBUG
 
 Copy the `bluecat_neutron_monitor.py` from /opt/stack/neutron/bluecatopenstack/bluecatopenstackto a suitable location (such as `/opt/bluecat`)
 
