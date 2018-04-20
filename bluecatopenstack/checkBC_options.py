@@ -128,6 +128,17 @@ print "BlueCat Nova Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_nova_debug
 print "BlueCat Nova TSIG Keys: \033[0;32m %s \033[1;m" %bcn_nova_TSIG
 
 
+class TSIGUpdate:
+    domains = bcn_nova_TSIG.keys()
+    def SecureFlag(self, domain):
+        for domain in domains:
+            print "Domain: \033[0;32m %s \033[1;m" %(domains[i])
+            print "Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[domains[i]])
+            self.TSIG = bcn_nova_TSIG[domains[i]]
+            return True
+    def getTSIG(self):
+        return self.TSIG
+
 def secureDomain(domain):
     domains = bcn_nova_TSIG.keys()
     for domain in domains:
@@ -155,5 +166,9 @@ if bcn_neutron_TSIG.keys():
 		print "Domain: \033[0;32m %s \033[1;m" %(neutronsecuredomains[i])
 		print "Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[neutronsecuredomains[i]])
 
-print secureDomain("bluecat.lab")
-print secureDomain("notsecure.lab")
+
+a = TSIGUpdate
+a.SecureFlag('bluecat.lab')
+b = a.getTSIG()
+print type(b)
+print b
