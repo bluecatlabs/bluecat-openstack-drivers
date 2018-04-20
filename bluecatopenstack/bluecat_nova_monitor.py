@@ -105,6 +105,31 @@ if bcn_nova_TSIG.keys():
 # # read from nova.conf [bluecat] settings parameters bcn_nova_debuglevel and bcn_nova_logfile
 log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
 
+class TSIGSecured():
+        TSIGKey=""
+        domains = bcn_nova_TSIG.keys()
+
+        def __init__(self, domain):
+                self.domain = domain
+
+        def TSIG(self,domain):
+                self.domain = domain
+                if domain in TSIGSecured.domains:
+                        # print "TSIG \033[0;32m %s \033[1;m" % bcn_nova_TSIG[domain]
+                        return bcn_nova_TSIG[domain]
+                else:
+                        # print "No TSIG"
+                        return
+
+        def isSecure(self,domain):
+                self.domain = domain
+                if domain in TSIGSecured.domains:
+                        #print "Domain \033[0;32m %s \033[1;m has TSIG Key (TRUE)" % self.domain
+                        return True
+                else:
+                        #print "Domain \033[0;32m %s \033[1;m has no TSIG Key (FALSE)" % self.domain
+                        return False
+
 def stripptr(substr, str):
         index = 0
         length = len(substr)
@@ -168,6 +193,13 @@ def addFWD(name,ttl,ipaddress):
 	hostname = splitFQDN(name)[0]
 	log.debug ('[addFWD] - hostname %s' % hostname)
 	log.debug ('[addFWD] - domain %s' % splitFQDN(name)[1])
+
+    domain = splitFQDN(name)[1]
+    if check4TSIG.isSecure(domain):
+        log.debug ('[addFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain)
+    else:
+        log.debug ('[addFWD] - domain %s has no TSIG key defined ' % domain
+
 	address_type = enumIPtype(ipaddress)
         if address_type == 4:
 		log.debug ('[addFWD] - IPv4')
@@ -178,7 +210,7 @@ def addFWD(name,ttl,ipaddress):
 	response = dns.query.udp(update, monitor_nameserver)
 	return response
 
-# Resolve AAAA record from name, returns address
+# Delete record from name
 def delFWD(name):
 	name = str(name)
 	update = dns.update.Update(splitFQDN(name)[1])
@@ -186,6 +218,12 @@ def delFWD(name):
 	domain = splitFQDN(name)[1]
 	log.debug ('[delFWD] - hostname %s' % hostname)
 	log.debug ('[delFWD] - domainname %s' % domain)
+
+    if check4TSIG.isSecure(domain):
+        log.debug ('[delFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain)
+    else:
+        log.debug ('[delFWD] - domain %s has no TSIG key defined ' % domain
+
 	update.delete(hostname, 'A')
 	update.delete(hostname, 'AAAA')
 	response = dns.query.tcp(update, monitor_nameserver)
