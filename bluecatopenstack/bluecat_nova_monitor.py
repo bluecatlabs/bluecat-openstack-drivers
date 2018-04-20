@@ -167,6 +167,11 @@ def addREV(ipaddress,ttl,name):
 	log.debug ('[addREV] - label %s' % label)
 	name = name + '.'
 	log.debug ('[addREV] - name %s' % name)
+    check4TSIG = TSIGSecured(authdomain)
+    if check4TSIG.isSecure(authdomain):
+        log.debug ('[delREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
+    else:
+        log.debug ('[delREV] - domain %s has no TSIG key defined ' % authdomain)
 	update = dns.update.Update(authdomain)
 	update.replace(label,monitor_ttl,dns.rdatatype.PTR, name)
 	response = dns.query.tcp(update, monitor_nameserver)
@@ -179,6 +184,11 @@ def delREV(ipaddress):
 	log.debug ('[delREV] - reversedomain  %s' % reversedomain)
 	authdomain = getrevzone_auth(str(reversedomain)).rstrip('.')
 	log.debug ('[delREV] - authdomain  %s' % authdomain)
+    check4TSIG = TSIGSecured(authdomain)
+    if check4TSIG.isSecure(authdomain):
+        log.debug ('[delREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
+    else:
+        log.debug ('[delREV] - domain %s has no TSIG key defined ' % authdomain)
 	update = dns.update.Update(authdomain)
 	label = stripptr(authdomain, reversedomain)
 	log.debug ('[delREV] - label  %s' % label)
