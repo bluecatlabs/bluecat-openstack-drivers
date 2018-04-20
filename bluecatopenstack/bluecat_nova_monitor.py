@@ -56,9 +56,10 @@ bluecat_nova_parameters = [
     cfg.StrOpt('bcn_nova_logfile', default=None, help=("BlueCat Nova Monitor Logfile")),
     cfg.StrOpt('bcn_nova_ttl', default=666, help=("BlueCat Nova Monitor TTL")),
     cfg.StrOpt('bcn_nova_domain_override', default=False, help=("BlueCat Nova Monitor Domain Override")),
+    cfg.DictOpt('bcn_nova_TSIG', default=None, help=("BlueCat Nova TSIG")),
     cfg.StrOpt('bcn_nova_debuglevel', default=INFO, help=("BlueCat Nova Monitor Debug Level"))]
 
-version = 1.0
+version = 1.1
 EXCHANGE_NAME="nova"
 ROUTING_KEY="notifications.info"
 QUEUE_NAME="bluecat_nova_monitor"
@@ -86,6 +87,7 @@ monitor_logfile = NOVA_CONF.bluecat.bcn_nova_logfile
 monitor_ttl = NOVA_CONF.bluecat.bcn_nova_ttl
 monitor_domain_override = NOVA_CONF.bluecat.bcn_nova_domain_override
 monitor_debuglevel = NOVA_CONF.bluecat.bcn_nova_debuglevel
+monitor_TSIG = bcn_nova_TSIG = NOVA_CONF.bluecat.bcn_nova_TSIG
 
 print 'BlueCat Nova Monitor Transport URL = ',monitor_broker
 print 'BlueCat Nova Monitor NameServer =',monitor_nameserver
@@ -93,6 +95,12 @@ print 'BlueCat Nova Monitor Logfile =',monitor_logfile
 print 'BlueCat Nova Monitor Debug Level = ',monitor_debuglevel
 print 'BlueCat Nova Monitor TTL =',monitor_ttl
 print 'BlueCat Nova Monitor Domain Override = ',monitor_domain_override
+print "BlueCat Secure Domains which have TSIG keys:"
+if bcn_nova_TSIG.keys():
+	novasecuredomains = bcn_nova_TSIG.keys()
+	for i in range(len(novasecuredomains)):
+		print "Domain: \033[0;32m %s \033[1;m" %(novasecuredomains[i])
+		print "TSIG Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[novasecuredomains[i]])
 
 # # read from nova.conf [bluecat] settings parameters bcn_nova_debuglevel and bcn_nova_logfile
 log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
@@ -346,7 +354,6 @@ class BCUpdater(ConsumerMixin):
 			elif event_type == EVENT_UPDATE:
 				log.debug ('[Instance Update]...')
 
-
 if __name__ == "__main__":
 
     log.info("BlueCat Nova Monitor - %s Bluecat Networks 2018" % version)
@@ -356,6 +363,12 @@ if __name__ == "__main__":
     log.info("- Debug Log Level: %s" % monitor_debuglevel)
     log.info("- Dynamic TTL for Records: %s" % monitor_ttl)
     log.info("- Override Domain: %s" % monitor_domain_override)
+    log.info("- Secure Domains which have TSIG keys:"
+    if bcn_nova_TSIG.keys():
+    	novasecuredomains = bcn_nova_TSIG.keys()
+    	for i in range(len(novasecuredomains)):
+    		log.info ("   - Domain:  %s " % (novasecuredomains[i])
+    		log.info ("   - TSIG Key:  %s " %(bcn_nova_TSIG[novasecuredomains[i]])
 
     with BrokerConnection(monitor_broker) as connection:
 		try:

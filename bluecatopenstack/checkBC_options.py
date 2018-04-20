@@ -120,12 +120,25 @@ print ""
 print "NOVA.CONF"
 print "[BLUECAT]"
 print "BlueCat Nova Monitor Transport URL:\033[0;32m %s \033[1;m" % bcn_nova_transport_url
-print "BlueCat Nova Monitor Name ServerL:\033[0;32m %s \033[1;m" % bcn_nova_nameserver
+print "BlueCat Nova Monitor Name Server:\033[0;32m %s \033[1;m" % bcn_nova_nameserver
 print "BlueCat Nova Logfile:\033[0;32m %s \033[1;m" % bcn_nova_logfile
 print "BlueCat Nova Monitor TTL:\033[0;32m %s \033[1;m" % bcn_nova_ttl
 print "BlueCat Nova Monitor Domain Override:\033[0;32m %s \033[1;m" % bcn_nova_domain_override
 print "BlueCat Nova Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_nova_debuglevel
 print "BlueCat Nova TSIG Keys: \033[0;32m %s \033[1;m" %bcn_nova_TSIG
+
+
+def secureDomain(domain):
+    domains = bcn_nova_TSIG.keys()
+    for domain in domains:
+        print "Domain: \033[0;32m %s \033[1;m" %(domains[i])
+        print "Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[domains[i]])
+        TSIG = bcn_nova_TSIG[domains[i]]
+        return True, TSIG
+    print "No TSIG for domain %s" domain
+    return False
+
+
 
 print ""
 print "NOVA Domains which have TSIG keys:"
@@ -134,7 +147,7 @@ if bcn_nova_TSIG.keys():
 	for i in range(len(novasecuredomains)):
 		print "Domain: \033[0;32m %s \033[1;m" %(novasecuredomains[i])
 		print "Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[novasecuredomains[i]])
-print ""	
+print ""
 print "Neutron Domains which have TSIG keys:"
 if bcn_neutron_TSIG.keys():
 	neutronsecuredomains = bcn_neutron_TSIG.keys()
@@ -142,4 +155,5 @@ if bcn_neutron_TSIG.keys():
 		print "Domain: \033[0;32m %s \033[1;m" %(neutronsecuredomains[i])
 		print "Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[neutronsecuredomains[i]])
 
-
+print secureDomain("bluecat.lab")
+print secureDomain("notsecure.lab")
