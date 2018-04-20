@@ -57,7 +57,7 @@ bluecat_nova_parameters = [
     cfg.StrOpt('bcn_nova_ttl', default=666, help=("BlueCat Nova Monitor TTL")),
     cfg.StrOpt('bcn_nova_domain_override', default=False, help=("BlueCat Nova Monitor Domain Override")),
     cfg.DictOpt('bcn_nova_TSIG', default=None, help=("BlueCat Nova TSIG")),
-    cfg.StrOpt('bcn_nova_debuglevel', default=INFO, help=("BlueCat Nova Monitor Debug Level"))]
+    cfg.StrOpt('bcn_nova_debuglevel', default="INFO", help=("BlueCat Nova Monitor Debug Level"))]
 
 version = 1.1
 EXCHANGE_NAME="nova"
@@ -193,13 +193,12 @@ def addFWD(name,ttl,ipaddress):
 	hostname = splitFQDN(name)[0]
 	log.debug ('[addFWD] - hostname %s' % hostname)
 	log.debug ('[addFWD] - domain %s' % splitFQDN(name)[1])
-
     domain = splitFQDN(name)[1]
+    check4TSIG = TSIGSecured(domain)
     if check4TSIG.isSecure(domain):
-        log.debug ('[addFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain)
+        log.debug ('[addFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain))
     else:
-        log.debug ('[addFWD] - domain %s has no TSIG key defined ' % domain
-
+        log.debug ('[addFWD] - domain %s has no TSIG key defined ' % domain)
 	address_type = enumIPtype(ipaddress)
         if address_type == 4:
 		log.debug ('[addFWD] - IPv4')
@@ -218,11 +217,11 @@ def delFWD(name):
 	domain = splitFQDN(name)[1]
 	log.debug ('[delFWD] - hostname %s' % hostname)
 	log.debug ('[delFWD] - domainname %s' % domain)
-
+    check4TSIG = TSIGSecured(domain)
     if check4TSIG.isSecure(domain):
-        log.debug ('[delFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain)
+        log.debug ('[delFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain))
     else:
-        log.debug ('[delFWD] - domain %s has no TSIG key defined ' % domain
+        log.debug ('[delFWD] - domain %s has no TSIG key defined ' % domain)
 
 	update.delete(hostname, 'A')
 	update.delete(hostname, 'AAAA')
@@ -401,12 +400,6 @@ if __name__ == "__main__":
     log.info("- Debug Log Level: %s" % monitor_debuglevel)
     log.info("- Dynamic TTL for Records: %s" % monitor_ttl)
     log.info("- Override Domain: %s" % monitor_domain_override)
-    log.info("- Secure Domains which have TSIG keys:"
-    if bcn_nova_TSIG.keys():
-    	novasecuredomains = bcn_nova_TSIG.keys()
-    	for i in range(len(novasecuredomains)):
-    		log.info ("   - Domain:  %s " % (novasecuredomains[i])
-    		log.info ("   - TSIG Key:  %s " %(bcn_nova_TSIG[novasecuredomains[i]])
 
     with BrokerConnection(monitor_broker) as connection:
 		try:
