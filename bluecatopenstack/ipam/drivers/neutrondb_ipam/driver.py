@@ -56,6 +56,9 @@ from oslo_config import cfg
 from oslo_service import service
 import oslo_messaging
 
+
+bluecat_group = cfg.OptGroup(name='bluecat',title='Bluecat Group')
+
 bluecat_bam_parameters = [
     cfg.StrOpt('bam_address', default=None, help=("BAM IP Address")),
     cfg.StrOpt('bam_api_user', default=None, help=("BAM API User Name")),
@@ -69,7 +72,7 @@ bluecat_bam_parameters = [
     cfg.StrOpt('bam_ipv4_private_iprange_gw', default=None, help=("BAM IPv4 Private Range Gateway")),
     cfg.StrOpt('bam_ipv6_public_block', default=None, help=("BAM IPv6 Public Block")),
     cfg.StrOpt('bam_ipv6_private_block', default=None, help=("BAM IPv6 Private Block")),
-    cfg.StrOpt('bam_dns_zone', default=None, help=("BAM DNS Zone"))]
+    cfg.StrOpt('bam_dns_zone', default=None, help=("BAM DNS Zone")),
     cfg.StrOpt('bam_updatemodify_networks', default=None, help=("BAM Update Of Modify Networks"))]
 
 
@@ -647,6 +650,9 @@ def getBCNConfig(configFileName):
     db['bam_ipv6_private_block']=BAM_CONF.bluecat.bam_ipv6_private_block
     db['bam_dns_zone']=BAM_CONF.bluecat.bam_dns_zone
     db['bam_updatemodify_networks']=BAM_CONF.bluecat.bam_updatemodify_networks
+
+    LOG.info("BCN: bam_address = %s " % (db['bam_address']) )
+
     return db
 
 
@@ -844,7 +850,7 @@ def createBCPI6Obj(ipAddr, hostName, uuid, mac, configID, soap_client):
     properties = "name=" +hostName +"|UUID=" +uuid
 
     # Note - this is in a different order to v4.
-    paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+    paramsBAM = getBCNConfig(BC_configFileName)
     hostInfo = str(viewID) +"," +hostName +"." +paramsBAM['bam_dns_zone'] +",false,false"
     LOG.info("BCN: IP6Obj hostInfo = %s" % (hostInfo))
 
