@@ -93,8 +93,6 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 		Location: /usr/lib/python2.7/site-packages
 		Requires: dnspython, configparser, ipaddress, suds, pprint
 
-- Copy the new driver.ini to the /opt/neutron/neutron/ipam/drivers/neutrondb_ipam directory.
-
 #### Install the BlueCat Neutron Driver patch on Openstack
 
 - Clone the git repo  
@@ -135,28 +133,6 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 		bam_dns_zone=bluecat.lab
 		bam_updatemodify_networks=True
 		
-#### Configure The BlueCat OpenStack driver
-
-##### For version V0.13 and above
-
-Edit 'driver.ini' as required for your environment:
-
-	[BAM]
-	bam_address=192.168.1.100
-	bam_api_user=openstack
-	bam_api_pass=openstack
-	bam_config_name=OpenStack
-	bam_ipv4_public_block=10.0.0.0/8
-	bam_ipv4_private_block=192.168.1.0/24
-	bam_ipv4_private_network=192.168.1.0/26
-	bam_ipv4_private_iprange_startip=192.168.1.2
-	bam_ipv4_private_iprange_endip=192.168.1.62
-	bam_ipv4_private_iprange_gw=192.168.1.254
-	bam_ipv6_public_block=2000::/3
-	bam_ipv6_private_block=FC00::/6
-	bam_dns_zone=bluecat.lab
-	bam_updatemodify_networks=True
-
 #### Installing the Bluecat Nova Monitor
 
 Edit the nova.conf to add the Bluecat parameters
@@ -187,7 +163,7 @@ Edit the neutron.conf to add the Bluecat parameters
 	bcn_nova_debuglevel=DEBUG
 	bcn_nova_TSIG = bluecat.lab:trgMrgF/Kf1Bn67tNbWWhA==,openstack.bluecat.lab:c26dRiyCqnKfgVUGWlp5Tg==
 
-Copy the `bluecat_neutron_monitor.py` from /opt/stack/neutron/bluecatopenstack/bluecatopenstackto a suitable location (such as `/opt/bluecat`)
+Copy the `bluecat_neutron_monitor.py` from /opt/stack/neutron/bluecatopenstack/bluecatopenstack to a suitable location (such as `/opt/bluecat`)
 
 Run the `bluecat_neutron_monitor.py` code
 
@@ -205,7 +181,6 @@ The OpenStack example integration would not have been possible without the work 
 Thank you for contributing your time to making this project a success.
 
 - David Horne
-- Dmitri Dehterov
 - Brian Shorland
 
 ## License
