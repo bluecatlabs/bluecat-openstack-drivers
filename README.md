@@ -67,7 +67,8 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 		bcn_nova_logfile=/home/brian/devstack/bluecat_nova.log
 		bcn_nova_ttl=666
 		bcn_nova_domain_override=False 
-		bcn_nova_debuglevel=DEBUG 
+		bcn_nova_debuglevel=DEBUG
+		bcn_nova_TSIG = bluecat.lab:trgMrgF/Kf1Bn67tNbWWhA==,openstack.bluecat.lab:c26dRiyCqnKfgVUGWlp5Tg==
 
 		bcn_neutron_transport_url=amqp://stackrabbit:nintendo@localhost:5672//
 		bcn_neutron_nameserver=192.168.1.102
@@ -76,6 +77,7 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 		bcn_neutron_domain_override=False
 		bcn_neutron_debuglevel=DEBUG 
 		bcn_neutron_replace=False
+		bcn_neutron_TSIG = bluecat.lab:trgMrgF/Kf1Bn67tNbWWhA==,openstack.bluecat.lab:c26dRiyCqnKfgVUGWlp5Tg==
 
 - Run stack.sh to stack Devstack, during stacking Devstack will correctly assigned the parameters defined in the local.conf into the nova/neutron.conf files automatically
 
@@ -166,6 +168,7 @@ Edit the nova.conf to add the Bluecat parameters
 	bcn_nova_ttl=666
 	bcn_nova_domain_override=False 
 	bcn_nova_debuglevel=DEBUG
+	bcn_nova_TSIG = bluecat.lab:trgMrgF/Kf1Bn67tNbWWhA==,openstack.bluecat.lab:c26dRiyCqnKfgVUGWlp5Tg==
 
 Copy the `bluecat_nova_monitor.py` from /opt/stack/neutron/bluecatopenstack/bluecatopenstack to a suitable location (such as `/opt/bluecat`)
 
@@ -182,6 +185,7 @@ Edit the neutron.conf to add the Bluecat parameters
 	bcn_nova_ttl=666
 	bcn_nova_domain_override=False 
 	bcn_nova_debuglevel=DEBUG
+	bcn_nova_TSIG = bluecat.lab:trgMrgF/Kf1Bn67tNbWWhA==,openstack.bluecat.lab:c26dRiyCqnKfgVUGWlp5Tg==
 
 Copy the `bluecat_neutron_monitor.py` from /opt/stack/neutron/bluecatopenstack/bluecatopenstackto a suitable location (such as `/opt/bluecat`)
 
