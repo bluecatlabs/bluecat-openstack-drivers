@@ -107,6 +107,7 @@ log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(as
 
 class TSIGSecured():
         TSIGKey=""
+        keyname=""
         domains = bcn_nova_TSIG.keys()
 
         def __init__(self, domain):
@@ -115,19 +116,23 @@ class TSIGSecured():
         def TSIG(self,domain):
                 self.domain = domain
                 if domain in TSIGSecured.domains:
-                        log.debug ("[TSIGSecured] \033[0;32m TSIG Key in nova.conf %s \033[1;m" % bcn_nova_TSIG[domain])
+                        log.debug ("[TSIGSecured.TSIG] \033[0;32m TSIG Key in nova.conf %s \033[1;m" % bcn_nova_TSIG[domain])
+                        keyname = domain.replace(".","_")
+                        log.debug ('[TSIGSecured.TSIG] \033[0;32m expected TSIG key name in BAM %s \033[1;m' % keyname)
                         return bcn_nova_TSIG[domain]
                 else:
-                        log.debug ("[TSIGSecured] \033[1;31m No TSIG key in nova.conf for %s \033[1;m" % domain)
+                        log.debug ("[TSIGSecured.TSIG] \033[1;31m No TSIG key in nova.conf for %s \033[1;m" % domain)
                         return
 
         def isSecure(self,domain):
                 self.domain = domain
                 if domain in TSIGSecured.domains:
-                        log.debug ("[TSIGSecured] \033[0;32m TSIG key in nova.conf for  %s \033[1;m" % domain)
-                        return True
+						log.debug ("[TSIGSecured.isSecure] \033[0;32m TSIG key in nova.conf for %s \033[1;m" % domain)
+						keyname = domain.replace(".","_")
+						log.debug ('[TSIGSecured.TSIG] \033[0;32m expected TSIG key name in BAM %s \033[1;m' % keyname)
+						return True
                 else:
-                        log.debug ("[TSIGSecured] \033[1;31m No TSIG key found in nova.conf for %s \033[1;m" % domain)
+                        log.debug ("[TSIGSecured.isSecure] \033[1;31m No TSIG key found in nova.conf for %s \033[1;m" % domain)
                         return False
 
 def stripptr(substr, str):
@@ -149,7 +154,7 @@ def getrevzone_auth(domain):
 	request.find_rrset(request.additional, dns.name.root, ADDITIONAL_RDCLASS, dns.rdatatype.OPT, create=True, force_unique=True)
 	response = dns.query.udp(request, monitor_nameserver)
 	if not response.authority:
-		log.debug ('[getrevzone_auth] - DNS not authoritive')
+		log.debug ('[getrevzone_auth] - \033[1;31m DNS not authoritive \033[1;m')
 		return
 	else:
 		auth_reverse = str(response.authority).split(' ')[1]
@@ -169,14 +174,11 @@ def addREV(ipaddress,ttl,name):
 	log.debug ('[addREV] - name %s' % name)
 	check4TSIG = TSIGSecured(authdomain)
 	if check4TSIG.isSecure(authdomain):
-		log.debug ('[addREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
 		key = str(check4TSIG.TSIG(authdomain))
 		keyname = authdomain.replace(".","_")
-		log.debug ('[addREV] - expected TSIG key name in BAM %s' % keyname)
 		keyring = dns.tsigkeyring.from_text({keyname:key})
 		update = dns.update.Update(authdomain, keyring=keyring)
 	else:
-		log.debug ('[addREV] - domain %s has no TSIG key defined ' % authdomain)
 		update = dns.update.Update(authdomain)
 	update.replace(label,monitor_ttl,dns.rdatatype.PTR, name)
 	response = dns.query.tcp(update, monitor_nameserver)
@@ -191,14 +193,11 @@ def delREV(ipaddress):
 	log.debug ('[delREV] - authdomain  %s' % authdomain)
 	check4TSIG = TSIGSecured(authdomain)
 	if check4TSIG.isSecure(authdomain):		
-		log.debug ('[delREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
 		key = str(check4TSIG.TSIG(authdomain))
 		keyname = authdomain.replace(".","_")
-		log.debug ('[delREV] - expected TSIG key name in BAM %s' % keyname)
 		keyring = dns.tsigkeyring.from_text({keyname:key})
 		update = dns.update.Update(authdomain, keyring=keyring)
 	else:
-		log.debug ('[delREV] - domain %s has no TSIG key defined ' % authdomain)
 		update = dns.update.Update(authdomain)
 	label = stripptr(authdomain, reversedomain)
 	log.debug ('[delREV] - label  %s' % label)
@@ -215,14 +214,11 @@ def addFWD(name,ttl,ipaddress):
 	domain = splitFQDN(name)[1]
 	check4TSIG = TSIGSecured(domain)
 	if check4TSIG.isSecure(domain):
-		log.debug ('[addFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain))
 		key = str(check4TSIG.TSIG(domain))
 		keyname = domain.replace(".","_")
-		log.debug ('[addFWD] - expected TSIG key name in BAM %s' % keyname)
 		keyring = dns.tsigkeyring.from_text({keyname:key})
 		update = dns.update.Update(splitFQDN(name)[1], keyring=keyring)
 	else:
-		log.debug ('[addFWD] - domain %s has no TSIG key defined ' % domain)
 		update = dns.update.Update(splitFQDN(name)[1])
 	address_type = enumIPtype(ipaddress)
         if address_type == 4:
@@ -243,14 +239,11 @@ def delFWD(name):
 	log.debug ('[delFWD] - domainname %s' % domain)
 	check4TSIG = TSIGSecured(domain)
 	if check4TSIG.isSecure(domain):
-		log.debug ('[delFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain))
 		key = str(check4TSIG.TSIG(domain))
 		keyname = domain.replace(".","_")
-		log.debug ('[delFWD] - expected TSIG key name in BAM %s' % keyname)
 		keyring = dns.tsigkeyring.from_text({keyname:key})
 		update = dns.update.Update(splitFQDN(name)[1], keyring=keyring)
 	else:
-		log.debug ('[delFWD] - domain %s has no TSIG key defined ' % domain)
         update = dns.update.Update(splitFQDN(name)[1])
 	update.delete(hostname, 'A')
 	update.delete(hostname, 'AAAA')
@@ -264,12 +257,12 @@ def resolveA(name):
 	try:
 		myAnswers = myResolver.query(name, dns.rdatatype.A)
 	except dns.exception.DNSException:
-		log.debug ('[resolveA] - Exception %s' % dns.exception.DNSException)
+		log.debug ('[resolveA] - \033[1;31m Exception %s \033[1;m' % dns.exception.DNSException)
 		return
 	alist = []
 	for rr in myAnswers.response.answer:
 		for a in rr:
-			log.debug ('[resolveA] - %s' % a.address)
+			log.debug ('[resolveA] - \033[0;32m %s \033[1;m' % a.address)
 			alist.append (a.address)
 		return alist
 	return
@@ -282,12 +275,12 @@ def resolveAAAA(name):
 	try:
 		myAnswers = myResolver.query(name, dns.rdatatype.AAAA)
 	except dns.exception.DNSException:
-		log.debug ('[resolveAAAA] - Exception %s' % dns.exception.DNSException)
+		log.debug ('[resolveAAAA]\033[1;31m Exception %s \033[1;m' % dns.exception.DNSException)
 		return
 	alist = []
 	for rr in myAnswers.response.answer:
 		for aaaa in rr:
-			log.debug ('[resolveAAAA] - %s' % aaaa.address)
+			log.debug ('[resolveAAAA]\033[0;32m - %s \033[1;m' % aaaa.address)
 			alist.append (aaaa.address)
 		return alist
 	return
@@ -314,7 +307,7 @@ def resolvePTR(address):
 			log.debug ('[ResolvePTR] - %s' % rdata)
 			return rdata
 	except:
-		log.debug ('[ResolvePTR] - PTR query failed')
+		log.debug ('[ResolvePTR] - \033[1;31m PTR query failed \033[1;m')
 		return "PTR Query failed"
 
 # Returns address type 4 or 6
@@ -354,10 +347,10 @@ class BCUpdater(ConsumerMixin):
 
 # Message handler extracts event_type, hostname, addresses etc. from payload
     def _handle_message(self, body):
-		log.debug('Body: %r' % body)
+		log.debug('[Event Body] %r' % body)
 		jbody = json.loads(body['oslo.message'])
 		event_type = jbody['event_type']
-		log.info ('Event Type :- %s' % event_type)
+		log.info ('\033[0;32m[Event Type] [%s] \033[1;m' % event_type)
 
 		if event_type in [EVENT_CREATE, EVENT_DELETE]:
 			hostname = jbody['payload']['hostname']
@@ -401,7 +394,7 @@ class BCUpdater(ConsumerMixin):
 						log.info ('[Instance Delete] - Deleting PTR for {} {}'.format(ip,fqdn))
 						delREV(ip)
 				elif resA is None:
-					log.debug ("Exception removing...")
+					log.debug ("\033[1;31mException Deleting... \033[1;m")
 				log.debug ('[Instance Delete] - Removed PTRs for A')
 
 				resAAAA = resolveAAAA(fqdn)
@@ -410,7 +403,7 @@ class BCUpdater(ConsumerMixin):
 						log.info ('[Instance Delete] - Deleting PTR for {} {}'.format(ip,fqdn))
 						delREV(ip)
 				elif resAAAA is None:
-					log.debug ("Exception removing...")
+					log.debug ("\033[1;31mException Deleting... \033[1;m")
 				log.debug ('[Instance Delete] - Removed PTRs for AAAA')
 
 				# Now remove the forward A/AAAA records
