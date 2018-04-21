@@ -95,8 +95,8 @@ print 'BlueCat Nova Monitor Logfile =',monitor_logfile
 print 'BlueCat Nova Monitor Debug Level = ',monitor_debuglevel
 print 'BlueCat Nova Monitor TTL =',monitor_ttl
 print 'BlueCat Nova Monitor Domain Override = ',monitor_domain_override
-print "BlueCat Secure Domains which have TSIG keys:"
 if bcn_nova_TSIG.keys():
+	print "Domains with configured TSIG keys:"
 	novasecuredomains = bcn_nova_TSIG.keys()
 	for i in range(len(novasecuredomains)):
 		print "Domain: \033[0;32m %s \033[1;m" %(novasecuredomains[i])
@@ -170,7 +170,10 @@ def addREV(ipaddress,ttl,name):
 	check4TSIG = TSIGSecured(authdomain)
 	if check4TSIG.isSecure(authdomain):
 		log.debug ('[addREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
-		keyring = dns.tsigkeyring.from_text(check4TSIG.TSIG(authdomain))
+		key = str(check4TSIG.TSIG(authdomain))
+		keyname = authdomain.replace(".","_")
+		log.debug ('[addREV] - expected TSIG key name in BAM %s' % keyname)
+		keyring = dns.tsigkeyring.from_text({keyname:key})
 		update = dns.update.Update(authdomain, keyring=keyring)
 	else:
 		log.debug ('[addREV] - domain %s has no TSIG key defined ' % authdomain)
@@ -187,9 +190,12 @@ def delREV(ipaddress):
 	authdomain = getrevzone_auth(str(reversedomain)).rstrip('.')
 	log.debug ('[delREV] - authdomain  %s' % authdomain)
 	check4TSIG = TSIGSecured(authdomain)
-	if check4TSIG.isSecure(authdomain):
+	if check4TSIG.isSecure(authdomain):		
 		log.debug ('[delREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
-		keyring = dns.tsigkeyring.from_text(check4TSIG.TSIG(authdomain))
+		key = str(check4TSIG.TSIG(authdomain))
+		keyname = authdomain.replace(".","_")
+		log.debug ('[delREV] - expected TSIG key name in BAM %s' % keyname)
+		keyring = dns.tsigkeyring.from_text({keyname:key})
 		update = dns.update.Update(authdomain, keyring=keyring)
 	else:
 		log.debug ('[delREV] - domain %s has no TSIG key defined ' % authdomain)
