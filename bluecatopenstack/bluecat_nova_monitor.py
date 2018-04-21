@@ -169,10 +169,12 @@ def addREV(ipaddress,ttl,name):
 	log.debug ('[addREV] - name %s' % name)
 	check4TSIG = TSIGSecured(authdomain)
 	if check4TSIG.isSecure(authdomain):
-		log.debug ('[delREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
+		log.debug ('[addREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
+		keyring = dns.tsigkeyring.from_text(check4TSIG.TSIG(authdomain))
+		update = dns.update.Update(authdomain, keyring=keyring)
 	else:
-		log.debug ('[delREV] - domain %s has no TSIG key defined ' % authdomain)
-	update = dns.update.Update(authdomain)
+		log.debug ('[addREV] - domain %s has no TSIG key defined ' % authdomain)
+		update = dns.update.Update(authdomain)
 	update.replace(label,monitor_ttl,dns.rdatatype.PTR, name)
 	response = dns.query.tcp(update, monitor_nameserver)
 	return response
@@ -187,9 +189,11 @@ def delREV(ipaddress):
 	check4TSIG = TSIGSecured(authdomain)
 	if check4TSIG.isSecure(authdomain):
 		log.debug ('[delREV] - domain has TSIG key defined %s' % check4TSIG.TSIG(authdomain))
+		keyring = dns.tsigkeyring.from_text(check4TSIG.TSIG(authdomain))
+		update = dns.update.Update(authdomain, keyring=keyring)
 	else:
 		log.debug ('[delREV] - domain %s has no TSIG key defined ' % authdomain)
-	update = dns.update.Update(authdomain)
+		update = dns.update.Update(authdomain)
 	label = stripptr(authdomain, reversedomain)
 	log.debug ('[delREV] - label  %s' % label)
 	update.delete(label,'PTR')
@@ -199,7 +203,6 @@ def delREV(ipaddress):
 # add A/AAAA record
 def addFWD(name,ttl,ipaddress):
 	ipaddress = str(ipaddress)
-	update = dns.update.Update(splitFQDN(name)[1])
 	hostname = splitFQDN(name)[0]
 	log.debug ('[addFWD] - hostname %s' % hostname)
 	log.debug ('[addFWD] - domain %s' % splitFQDN(name)[1])
@@ -207,8 +210,14 @@ def addFWD(name,ttl,ipaddress):
 	check4TSIG = TSIGSecured(domain)
 	if check4TSIG.isSecure(domain):
 		log.debug ('[addFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain))
+		key = str(check4TSIG.TSIG(domain))
+		keyname = domain.replace(".","_")
+		log.debug ('[addFWD] - expected TSIG key name in BAM %s' % keyname)
+		keyring = dns.tsigkeyring.from_text({keyname:key})
+		update = dns.update.Update(splitFQDN(name)[1], keyring=keyring)
 	else:
 		log.debug ('[addFWD] - domain %s has no TSIG key defined ' % domain)
+		update = dns.update.Update(splitFQDN(name)[1])
 	address_type = enumIPtype(ipaddress)
         if address_type == 4:
 		log.debug ('[addFWD] - IPv4')
@@ -222,7 +231,6 @@ def addFWD(name,ttl,ipaddress):
 # Delete record from name
 def delFWD(name):
 	name = str(name)
-	update = dns.update.Update(splitFQDN(name)[1])
 	hostname = splitFQDN(name)[0]
 	domain = splitFQDN(name)[1]
 	log.debug ('[delFWD] - hostname %s' % hostname)
@@ -230,8 +238,14 @@ def delFWD(name):
 	check4TSIG = TSIGSecured(domain)
 	if check4TSIG.isSecure(domain):
 		log.debug ('[delFWD] - domain has TSIG key defined %s' % check4TSIG.TSIG(domain))
+		key = str(check4TSIG.TSIG(domain))
+		keyname = domain.replace(".","_")
+		log.debug ('[delFWD] - expected TSIG key name in BAM %s' % keyname)
+		keyring = dns.tsigkeyring.from_text({keyname:key})
+		update = dns.update.Update(splitFQDN(name)[1], keyring=keyring)
 	else:
 		log.debug ('[delFWD] - domain %s has no TSIG key defined ' % domain)
+        update = dns.update.Update(splitFQDN(name)[1])
 	update.delete(hostname, 'A')
 	update.delete(hostname, 'AAAA')
 	response = dns.query.tcp(update, monitor_nameserver)
