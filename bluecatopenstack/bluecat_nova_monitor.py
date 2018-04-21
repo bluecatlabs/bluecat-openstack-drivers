@@ -115,19 +115,19 @@ class TSIGSecured():
         def TSIG(self,domain):
                 self.domain = domain
                 if domain in TSIGSecured.domains:
-                        log.debug ("[TSIGSecured] TSIG Key in nova.conf 033[0;32m %s \033[1;m" % bcn_nova_TSIG[domain])
+                        log.debug ("[TSIGSecured] \033[0;32m TSIG Key in nova.conf %s \033[1;m" % bcn_nova_TSIG[domain])
                         return bcn_nova_TSIG[domain]
                 else:
-                        log.debug ("[TSIGSecured] No TSIG key in nova.conf for \033[0;32m %s \033[1;m" % domain)
+                        log.debug ("[TSIGSecured] \033[1;31m No TSIG key in nova.conf for %s \033[1;m" % domain)
                         return
 
         def isSecure(self,domain):
                 self.domain = domain
                 if domain in TSIGSecured.domains:
-                        log.debug ("[TSIGSecured] TSIG key in nova.conf for \033[0;32m %s \033[1;m" % domain)
+                        log.debug ("[TSIGSecured] \033[0;32m TSIG key in nova.conf for  %s \033[1;m" % domain)
                         return True
                 else:
-                        log.debug ("[TSIGSecured] No TSIG key found in nova.conf for \033[0;32m %s \033[1;m" % domain)
+                        log.debug ("[TSIGSecured] \033[1;31m No TSIG key found in nova.conf for %s \033[1;m" % domain)
                         return False
 
 def stripptr(substr, str):
