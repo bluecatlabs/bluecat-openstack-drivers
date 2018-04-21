@@ -120,12 +120,13 @@ print ""
 print "NOVA.CONF"
 print "[BLUECAT]"
 print "BlueCat Nova Monitor Transport URL:\033[0;32m %s \033[1;m" % bcn_nova_transport_url
-print "BlueCat Nova Monitor Name ServerL:\033[0;32m %s \033[1;m" % bcn_nova_nameserver
+print "BlueCat Nova Monitor Name Server:\033[0;32m %s \033[1;m" % bcn_nova_nameserver
 print "BlueCat Nova Logfile:\033[0;32m %s \033[1;m" % bcn_nova_logfile
 print "BlueCat Nova Monitor TTL:\033[0;32m %s \033[1;m" % bcn_nova_ttl
 print "BlueCat Nova Monitor Domain Override:\033[0;32m %s \033[1;m" % bcn_nova_domain_override
 print "BlueCat Nova Monitor Debug Level:\033[0;32m %s \033[1;m" % bcn_nova_debuglevel
 print "BlueCat Nova TSIG Keys: \033[0;32m %s \033[1;m" %bcn_nova_TSIG
+
 
 print ""
 print "NOVA Domains which have TSIG keys:"
@@ -134,7 +135,7 @@ if bcn_nova_TSIG.keys():
 	for i in range(len(novasecuredomains)):
 		print "Domain: \033[0;32m %s \033[1;m" %(novasecuredomains[i])
 		print "Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[novasecuredomains[i]])
-print ""	
+print ""
 print "Neutron Domains which have TSIG keys:"
 if bcn_neutron_TSIG.keys():
 	neutronsecuredomains = bcn_neutron_TSIG.keys()
@@ -143,3 +144,41 @@ if bcn_neutron_TSIG.keys():
 		print "Key: \033[0;32m %s \033[1;m" %(bcn_nova_TSIG[neutronsecuredomains[i]])
 
 
+# Class for TSIGUpdate
+
+class TSIGSecured():
+        TSIGKey=""
+        domains = bcn_nova_TSIG.keys()
+
+        def __init__(self, domain):
+                self.domain = domain
+
+        def TSIG(self,domain):
+                self.domain = domain
+                if domain in TSIGSecured.domains:
+                        # print "TSIG \033[0;32m %s \033[1;m" % bcn_nova_TSIG[domain]
+                        return bcn_nova_TSIG[domain]
+                else:
+                        # print "No TSIG"
+                        return
+
+        def isSecure(self,domain):
+                self.domain = domain
+                if domain in TSIGSecured.domains:
+                        #print "Domain \033[0;32m %s \033[1;m has TSIG Key (TRUE)" % self.domain
+                        return True
+                else:
+                        #print "Domain \033[0;32m %s \033[1;m has no TSIG Key (FALSE)" % self.domain
+                        return False
+print ""
+print "Check TSIGSecure Class/Functions"
+
+check4TSIG  = TSIGSecured("")
+
+domain = "bluecat.lab"
+if check4TSIG.isSecure(domain):
+        print domain
+        print check4TSIG.TSIG(domain)
+else:
+        print domain
+        print "No TSIG"
