@@ -129,7 +129,7 @@ class TSIGSecured():
                 if domain in TSIGSecured.domains:
 						log.debug ("[TSIGSecured.isSecure] \033[0;32m TSIG key in nova.conf for %s \033[1;m" % domain)
 						keyname = domain.replace(".","_")
-						log.debug ('[TSIGSecured.TSIG] \033[0;32m expected TSIG key name in BAM %s \033[1;m' % keyname)
+						log.debug ('[TSIGSecured.isSecure] \033[0;32m expected TSIG key name in BAM %s \033[1;m' % keyname)
 						return True
                 else:
                         log.debug ("[TSIGSecured.isSecure] \033[1;31m No TSIG key found in nova.conf for %s \033[1;m" % domain)
@@ -244,9 +244,9 @@ def delFWD(name):
 		keyring = dns.tsigkeyring.from_text({keyname:key})
 		update = dns.update.Update(splitFQDN(name)[1], keyring=keyring)
 	else:
-        update = dns.update.Update(splitFQDN(name)[1])
-	update.delete(hostname, 'A')
-	update.delete(hostname, 'AAAA')
+		update = dns.update.Update(splitFQDN(name)[1])
+		update.delete(hostname, 'A')
+		update.delete(hostname, 'AAAA')
 	response = dns.query.tcp(update, monitor_nameserver)
 	return response
 
