@@ -39,7 +39,6 @@ from kombu import BrokerConnection
 from kombu import Exchange
 from kombu import Queue
 from kombu.mixins import ConsumerMixin
-
 from oslo_config import cfg
 from oslo_service import service
 import oslo_messaging
