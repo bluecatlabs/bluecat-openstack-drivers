@@ -44,8 +44,6 @@ from kombu import Exchange
 from kombu import Queue
 from kombu.mixins import ConsumerMixin
 
-
-import sys
 from oslo_config import cfg
 from oslo_service import service
 import oslo_messaging
@@ -59,7 +57,8 @@ bluecat_nova_parameters = [
     cfg.DictOpt('bcn_nova_TSIG', default=None, help=("BlueCat Nova TSIG")),
     cfg.StrOpt('bcn_nova_debuglevel', default="INFO", help=("BlueCat Nova Monitor Debug Level"))]
 
-version = 1.1
+version = 1.2
+
 EXCHANGE_NAME="nova"
 ROUTING_KEY="notifications.info"
 QUEUE_NAME="bluecat_nova_monitor"
@@ -154,14 +153,14 @@ def getrevzone_auth(domain):
 	request.find_rrset(request.additional, dns.name.root, ADDITIONAL_RDCLASS, dns.rdatatype.OPT, create=True, force_unique=True)
 	response = dns.query.udp(request, monitor_nameserver)
 	if not response.authority:
-		log.debug ('[getrevzone_auth] - \033[1;31m DNS not authoritive \033[1;m')
+		log.debug ('[getrevzone_auth] -\033[1;31m DNS not authoritive \033[1;m')
 		return
 	else:
 		auth_reverse = str(response.authority).split(' ')[1]
 		log.debug ('[getrezone_auth] - %s' % str(auth_reverse).lower())
 		return str(auth_reverse).lower()
 
-# Add PTR record for a given address
+# Add PTR record for a given address,ttl and name
 def addREV(ipaddress,ttl,name):
 	reversedomain = dns.reversename.from_address(str(ipaddress))
 	reversedomain = str(reversedomain).rstrip('.')
@@ -170,7 +169,6 @@ def addREV(ipaddress,ttl,name):
 	log.debug ('[addREV] - authdomain %s' % authdomain)
 	label = stripptr(authdomain, reversedomain)
 	log.debug ('[addREV] - label %s' % label)
-	name = name + '.'
 	log.debug ('[addREV] - name %s' % name)
 	check4TSIG = TSIGSecured(authdomain)
 	if check4TSIG.isSecure(authdomain):
@@ -205,7 +203,7 @@ def delREV(ipaddress):
 	response = dns.query.tcp(update, monitor_nameserver)
 	return response
 
-# add A/AAAA record
+# add A/AAAA record by name, ttl and address
 def addFWD(name,ttl,ipaddress):
 	ipaddress = str(ipaddress)
 	hostname = splitFQDN(name)[0]
@@ -221,7 +219,7 @@ def addFWD(name,ttl,ipaddress):
 	else:
 		update = dns.update.Update(splitFQDN(name)[1])
 	address_type = enumIPtype(ipaddress)
-        if address_type == 4:
+    if address_type == 4:
 		log.debug ('[addFWD] - IPv4')
 		update.add(hostname,monitor_ttl,dns.rdatatype.A, ipaddress)
 	elif address_type == 6:
@@ -245,8 +243,8 @@ def delFWD(name):
 		update = dns.update.Update(splitFQDN(name)[1], keyring=keyring)
 	else:
 		update = dns.update.Update(splitFQDN(name)[1])
-		update.delete(hostname, 'A')
-		update.delete(hostname, 'AAAA')
+	update.delete(hostname, 'A')
+	update.delete(hostname, 'AAAA')
 	response = dns.query.tcp(update, monitor_nameserver)
 	return response
 
