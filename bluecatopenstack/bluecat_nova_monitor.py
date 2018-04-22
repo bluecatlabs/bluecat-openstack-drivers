@@ -168,6 +168,11 @@ def addREV(ipaddress,ttl,name):
 	log.debug ('[addREV] - authdomain %s' % authdomain)
 	label = stripptr(authdomain, reversedomain)
 	log.debug ('[addREV] - label %s' % label)
+	name = name
+	if name.endswith("."):
+		return
+	else:
+		name = name + '.'
 	log.debug ('[addREV] - name %s' % name)
 	check4TSIG = TSIGSecured(authdomain)
 	if check4TSIG.isSecure(authdomain):
@@ -218,7 +223,7 @@ def addFWD(name,ttl,ipaddress):
 	else:
 		update = dns.update.Update(splitFQDN(name)[1])
 	address_type = enumIPtype(ipaddress)
-    if address_type == 4:
+	if address_type == 4:
 		log.debug ('[addFWD] - IPv4')
 		update.add(hostname,monitor_ttl,dns.rdatatype.A, ipaddress)
 	elif address_type == 6:

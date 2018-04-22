@@ -121,7 +121,7 @@ class TSIGSecured():
                         log.debug ("[TSIGSecured.TSIG] \033[0;32m TSIG Key in neutron.conf %s \033[1;m" % bcn_neutron_TSIG[domain])
                         keyname = domain.replace(".","_")
                         log.debug ('[TSIGSecured.TSIG] \033[0;32m expected TSIG key name in BAM %s \033[1;m' % keyname)
-                        return bcn_nova_TSIG[domain]
+                        return bcn_neutron_TSIG[domain]
                 else:
                         log.debug ("[TSIGSecured.TSIG] \033[1;31m No TSIG key in neutron.conf for %s \033[1;m" % domain)
                         return
@@ -217,6 +217,8 @@ def addFWD(name,ttl,ipaddress):
 	log.debug ('[addFWD] - hostname %s' % hostname)
 	log.debug ('[addFWD] - domain %s' % splitFQDN(name)[1])
 	domain = splitFQDN(name)[1]
+	if domain.endswith("."):
+		domain = domain.rstrip('.')
 	check4TSIG = TSIGSecured(domain)
 	if check4TSIG.isSecure(domain):
 		key = str(check4TSIG.TSIG(domain))
@@ -248,7 +250,7 @@ def delFWD(name,ipaddress):
 	ipaddress = str(ipaddress)
 	update = dns.update.Update(splitFQDN(name)[1])
 	hostname = splitFQDN(name)[0]
-	domain = splitFQDN(name)[1]
+	domain = (splitFQDN(name)[1]).rstrip('.')
 	log.debug ('[delFWD] - name %s' % name)
 	log.debug ('[delFWD] - ipaddress %s' % ipaddress)
 	log.debug ('[delFWD] - hostname %s' % hostname)
