@@ -39,7 +39,6 @@ from kombu import BrokerConnection
 from kombu import Exchange
 from kombu import Queue
 from kombu.mixins import ConsumerMixin
-
 from oslo_config import cfg
 from oslo_service import service
 import oslo_messaging
@@ -48,12 +47,13 @@ bluecat_neutron_parameters = [
     cfg.StrOpt('bcn_neutron_transport_url', default=None, help=("BlueCat Neutron Monitor Transport URL")),
     cfg.StrOpt('bcn_neutron_nameserver', default=None, help=("BlueCat Neutron Monitor NameServer")),
     cfg.StrOpt('bcn_neutron_logfile', default=None, help=("BlueCat Neutron Monitor LogFile")),
-    cfg.StrOpt('bcn_neutron_ttl', default=None, help=("BlueCat Neutron Monitor TTL")),
+    cfg.StrOpt('bcn_neutron_ttl', default=666, help=("BlueCat Neutron Monitor TTL")),
     cfg.StrOpt('bcn_neutron_domain_override', default=None, help=("BlueCat Neutron Monitor Domain Overide")),
-    cfg.StrOpt('bcn_neutron_debuglevel', default=None, help=("BlueCat Neutron Monitor Debug Level")),
-    cfg.StrOpt('bcn_neutron_replace', default=None, help=("BlueCat Neutron Monitor Replace Policy"))]
+    cfg.StrOpt('bcn_neutron_debuglevel', default="INFO", help=("BlueCat Neutron Monitor Debug Level")),
+    cfg.DictOpt('bcn_neutron_TSIG', default=None, help=("BlueCat Neutron TSIG")),
+    cfg.StrOpt('bcn_neutron_replace', default="False", help=("BlueCat Neutron Monitor Replace Policy"))]
 
-version = 1.0
+version = 1.2
 
 EXCHANGE_NAME="neutron"
 ROUTING_KEY="notifications.info"
@@ -88,6 +88,7 @@ monitor_ttl = NEUTRON_CONF.bluecat.bcn_neutron_ttl
 monitor_domain_override = NEUTRON_CONF.bluecat.bcn_neutron_domain_override
 monitor_debuglevel = NEUTRON_CONF.bluecat.bcn_neutron_debuglevel
 monitor_replace = NEUTRON_CONF.bluecat.bcn_neutron_replace
+monitor_TSIG = bcn_neutron_TSIG = NEUTRON_CONF.bluecat.bcn_neutron_TSIG
 
 print 'BlueCat Neutron Monitor Transport URL = ',monitor_broker
 print 'BlueCat Neutron Monitor NameServer =',monitor_nameserver
@@ -96,9 +97,45 @@ print 'BlueCat Neutron Monitor Debug Level = ',monitor_debuglevel
 print 'BlueCat Nuetron Monitor TTL =',monitor_ttl
 print 'BlueCat Nuetron Monitor Domain Override = ',monitor_domain_override
 print 'BlueCat Nuetron Monitor Replace = ',monitor_replace
+if bcn_neutron_TSIG.keys():
+	print "Domains with configured TSIG keys:"
+	neutronsecuredomains = bcn_neutron_TSIG.keys()
+	for i in range(len(neutronsecuredomains)):
+		print "Domain: \033[0;32m %s \033[1;m" %(neutronsecuredomains[i])
+		print "TSIG Key: \033[0;32m %s \033[1;m" %(bcn_neutron_TSIG[neutronsecuredomains[i]])
 
 # read from Nuetron.conf [bluecat] settings parameters bcn_neutron_debuglevel and bcn_neutron_logfile
 log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
+
+class TSIGSecured():
+        TSIGKey=""
+        keyname=""
+        domains = bcn_neutron_TSIG.keys()
+
+        def __init__(self, domain):
+                self.domain = domain
+
+        def TSIG(self,domain):
+                self.domain = domain
+                if domain in TSIGSecured.domains:
+                        log.debug ("[TSIGSecured.TSIG] \033[0;32m TSIG Key in neutron.conf %s \033[1;m" % bcn_neutron_TSIG[domain])
+                        keyname = domain.replace(".","_")
+                        log.debug ('[TSIGSecured.TSIG] \033[0;32m expected TSIG key name in BAM %s \033[1;m' % keyname)
+                        return bcn_neutron_TSIG[domain]
+                else:
+                        log.debug ("[TSIGSecured.TSIG] \033[1;31m No TSIG key in neutron.conf for %s \033[1;m" % domain)
+                        return
+
+        def isSecure(self,domain):
+                self.domain = domain
+                if domain in TSIGSecured.domains:
+						log.debug ("[TSIGSecured.isSecure] \033[0;32m TSIG key in neutron.conf for %s \033[1;m" % domain)
+						keyname = domain.replace(".","_")
+						log.debug ('[TSIGSecured.isSecure] \033[0;32m expected TSIG key name in BAM %s \033[1;m' % keyname)
+						return True
+                else:
+                        log.debug ("[TSIGSecured.isSecure] \033[1;31m No TSIG key found in neutron.conf for %s \033[1;m" % domain)
+                        return False
 
 def stripptr(substr, str):
         index = 0
@@ -119,14 +156,14 @@ def getrevzone_auth(domain):
 	request.find_rrset(request.additional, dns.name.root, ADDITIONAL_RDCLASS, dns.rdatatype.OPT, create=True, force_unique=True)
 	response = dns.query.udp(request, monitor_nameserver)
 	if not response.authority:
-		log.debug ('[getrevzone_auth] - DNS not authoritive')
+		log.debug ('[getrevzone_auth] -\033[1;31m DNS not authoritive\033[1;m')
 		return
 	else:
 		auth_reverse = str(response.authority).split(' ')[1]
 		log.debug ('[getrezone_auth] - %s' % str(auth_reverse).lower())
 		return str(auth_reverse).lower()
 
-# Add PTR record for a given address
+# Add PTR record for a given address,ttl and name
 def addREV(ipaddress,ttl,name):
 	reversedomain = dns.reversename.from_address(str(ipaddress))
 	reversedomain = str(reversedomain).rstrip('.')
@@ -136,7 +173,14 @@ def addREV(ipaddress,ttl,name):
 	label = stripptr(authdomain, reversedomain)
 	log.debug ('[addREV] - label %s' % label)
 	log.debug ('[addREV] - name %s' % name)
-	update = dns.update.Update(authdomain)
+	check4TSIG = TSIGSecured(authdomain)
+	if check4TSIG.isSecure(authdomain):
+		key = str(check4TSIG.TSIG(authdomain))
+		keyname = authdomain.replace(".","_")
+		keyring = dns.tsigkeyring.from_text({keyname:key})
+		update = dns.update.Update(authdomain, keyring=keyring)
+	else:
+		update = dns.update.Update(authdomain)
 	if monitor_replace == False:
 		update.add(label,monitor_ttl,dns.rdatatype.PTR, name)
 	else:
@@ -144,7 +188,7 @@ def addREV(ipaddress,ttl,name):
 	response = dns.query.udp(update, monitor_nameserver)
 	return response
 
-# Delete PTR record for a passed address
+# Delete PTR record for a passed address,name
 def delREV(ipaddress,name):
 	name = str(name)
 	reversedomain = dns.reversename.from_address(str(ipaddress))
@@ -152,35 +196,37 @@ def delREV(ipaddress,name):
 	log.debug ('[delREV] - reversedomain  %s' % reversedomain)
 	authdomain = getrevzone_auth(str(reversedomain)).rstrip('.')
 	log.debug ('[delREV] - authdomain  %s' % authdomain)
-	update = dns.update.Update(authdomain)
+	check4TSIG = TSIGSecured(authdomain)
+	if check4TSIG.isSecure(authdomain):		
+		key = str(check4TSIG.TSIG(authdomain))
+		keyname = authdomain.replace(".","_")
+		keyring = dns.tsigkeyring.from_text({keyname:key})
+		update = dns.update.Update(authdomain, keyring=keyring)
+	else:
+		update = dns.update.Update(authdomain)
 	label = stripptr(authdomain, reversedomain)
 	log.debug ('[delREV] - label  %s' % label)
 	update.delete(label,'PTR',name)
 	response = dns.query.udp(update, monitor_nameserver)
 	return response
 
-# Delete A/AAAA record from name
-def delFWD(name,ipaddress):
-	name = str(name)
-	ipaddress = str(ipaddress)
-	update = dns.update.Update(splitFQDN(name)[1])
-	hostname = splitFQDN(name)[0]
-	domain = splitFQDN(name)[1]
-	log.debug ('[delFWD] - name %s' % name)
-	log.debug ('[delFWD] - ipaddress %s' % ipaddress)
-	log.debug ('[delFWD] - hostname %s' % hostname)
-	log.debug ('[delFWD] - domainname %s' % domain)
-	update.delete(hostname, 'A', ipaddress)
-	response = dns.query.udp(update, monitor_nameserver)
-	return response
-
-# add A/AAAA record
+# add A/AAAA record by name, ttl and address
 def addFWD(name,ttl,ipaddress):
 	ipaddress = str(ipaddress)
-	update = dns.update.Update(splitFQDN(name)[1])
 	hostname = splitFQDN(name)[0]
 	log.debug ('[addFWD] - hostname %s' % hostname)
 	log.debug ('[addFWD] - domain %s' % splitFQDN(name)[1])
+	domain = splitFQDN(name)[1]
+	if domain.endswith("."):
+		domain = domain.rstrip('.')
+	check4TSIG = TSIGSecured(domain)
+	if check4TSIG.isSecure(domain):
+		key = str(check4TSIG.TSIG(domain))
+		keyname = domain.replace(".","_")
+		keyring = dns.tsigkeyring.from_text({keyname:key})
+		update = dns.update.Update(splitFQDN(name)[1], keyring=keyring)
+	else:
+		update = dns.update.Update(splitFQDN(name)[1])
 	address_type = enumIPtype(ipaddress)
         if address_type == 4:
 		log.debug ('[addFWD] - IPv4')
@@ -198,7 +244,34 @@ def addFWD(name,ttl,ipaddress):
 	response = dns.query.udp(update, monitor_nameserver)
 	return response
 
-# Resolve PTR record from either IPv4 or IPv6 address
+# Delete record from name, ipadress
+def delFWD(name,ipaddress):
+	name = str(name)
+	ipaddress = str(ipaddress)
+	update = dns.update.Update(splitFQDN(name)[1])
+	hostname = splitFQDN(name)[0]
+	domain = (splitFQDN(name)[1]).rstrip('.')
+	log.debug ('[delFWD] - name %s' % name)
+	log.debug ('[delFWD] - ipaddress %s' % ipaddress)
+	log.debug ('[delFWD] - hostname %s' % hostname)
+	log.debug ('[delFWD] - domainname %s' % domain)
+	check4TSIG = TSIGSecured(domain)
+	if check4TSIG.isSecure(domain):
+		key = str(check4TSIG.TSIG(domain))
+		keyname = domain.replace(".","_")
+		keyring = dns.tsigkeyring.from_text({keyname:key})
+		update = dns.update.Update(splitFQDN(name)[1], keyring=keyring)
+	else:
+		update = dns.update.Update(splitFQDN(name)[1])
+	address_type = enumIPtype(ipaddress)
+	if address_type == 4:
+		update.delete(hostname, 'A', ipaddress)
+	if address_type == 6:
+		update.delete(hostname, 'AAAA', ipaddress)	
+	response = dns.query.udp(update, monitor_nameserver)
+	return response
+
+# Resolve PTR record given either IPv4 or IPv6 address
 def resolvePTR(address):
 	type = enumIPtype(address)
 	address = str(address)
@@ -219,7 +292,7 @@ def resolvePTR(address):
 			log.debug ('[ResolvePTR] - %s' % rdata)
 			return rdata
 	except:
-		log.debug ('[ResolvePTR] - PTR query failed')
+		log.debug ('[ResolvePTR] - \033[1;31m PTR query failed \033[1;m')
 		return "PTR Query failed"
 
 # Returns address type 4 or 6
@@ -259,10 +332,10 @@ class BCUpdater(ConsumerMixin):
 
 # Message handler extracts event_type
     def _handle_message(self, body):
-		log.debug('Body: %r' % body)
+		log.debug('[Event Body] %r' % body)
 		jbody = json.loads(body['oslo.message'])
 		event_type = jbody['event_type']
-		log.info ('EVENT_TYPE = %s' % event_type)
+		log.info ('\033[0;32m[Event Type] [%s] \033[1;m' % event_type)
  		if event_type == FLOAT_START:
  			# no relevent information in floatingip.create.start
  			log.info ('[floatingip.create.start]')
