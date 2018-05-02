@@ -404,9 +404,6 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
 
         if self._subnetpool:
 		tmpName = subnet_request.name
-		LOG.info("BRIAN: subnet_request.name %s" % (subnet_request.name))
-	# HACK BS
-		tmpName = "subnet_name"
 		subnet = super(NeutronDbPool, self).allocate_subnet(subnet_request)
         	subnet_request = subnet.get_details()
 		subnet_request.name = tmpName
@@ -431,7 +428,6 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         config = soap_client.service.getEntityByName(0, paramsBAM['bam_config_name'], 'Configuration')
         configID = config['id']
         LOG.info("BCN: Got configID %s" % (configID))
-
         LOG.info("BCN: Getting ParentBlockID Info ...")
 
         blockType = ""
@@ -468,12 +464,6 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
 
         cidr = str(subnet_request._subnet_cidr.ip) +"/" +str(subnet_request._subnet_cidr.prefixlen)
         LOG.info("BCN: Creating Network %s in BAM  ..." % (cidr))
-
-	# HACK BS
-	tmpName = subnet_request.name
-	LOG.info("BRIAN: subnet_request.name %s" % (subnet_request.name))
-	tmpName = "subnet_name"
-	subnet_request.name = "brian"
 	
         bcNetID = addBCNetwork(parentBlockId, cidr, subnet_request.name, subnet_request._subnet_id, str(subnet_request._subnet_cidr.version))
 
