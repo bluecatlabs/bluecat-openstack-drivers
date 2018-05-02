@@ -73,7 +73,7 @@ bluecat_bam_parameters = [
     cfg.StrOpt('bam_ipv6_public_block', default=None, help=("BAM IPv6 Public Block")),
     cfg.StrOpt('bam_ipv6_private_block', default=None, help=("BAM IPv6 Private Block")),
     cfg.StrOpt('bam_dns_zone', default=None, help=("BAM DNS Zone")),
-    cfg.StrOpt('bam_updatemodify_networks', default=None, help=("BAM Update Of Modify Networks"))]
+    cfg.StrOpt('bam_updatemodify_networks', default="True", help=("BAM Update Of Modify Networks"))]
 
 
 
@@ -536,7 +536,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
             raise n_exc.SubnetNotFound(subnet_id=subnet_id)
 
         # BlueCat additions
-        paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+        paramsBAM = getBCNConfig(BC_configFileName)
 
         if (paramsBAM['bam_updatemodify_networks'] == "True"):
 			soap_client = _bam_login(paramsBAM)
