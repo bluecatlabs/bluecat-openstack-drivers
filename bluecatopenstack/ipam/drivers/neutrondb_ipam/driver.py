@@ -73,7 +73,7 @@ bluecat_bam_parameters = [
     cfg.StrOpt('bam_ipv6_public_block', default=None, help=("BAM IPv6 Public Block")),
     cfg.StrOpt('bam_ipv6_private_block', default=None, help=("BAM IPv6 Private Block")),
     cfg.StrOpt('bam_dns_zone', default=None, help=("BAM DNS Zone")),
-    cfg.StrOpt('bam_updatemodify_networks', default="True", help=("BAM Update Of Modify Networks"))]
+    cfg.StrOpt('bam_updatemodify_networks', default=None, help=("BAM Update Of Modify Networks"))]
 
 
 
@@ -403,10 +403,12 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         paramsBAM = getBCNConfig(BC_configFileName)
 
         if self._subnetpool:
-		tmpName = subnet_request.name
-		subnet = super(NeutronDbPool, self).allocate_subnet(subnet_request)
-        	subnet_request = subnet.get_details()
-		subnet_request.name = tmpName
+            #tmpName = subnet_request.name
+            # HACK BS
+            tmpName = "subnet_name"
+            subnet = super(NeutronDbPool, self).allocate_subnet(subnet_request)
+            subnet_request = subnet.get_details()
+            subnet_request.name = tmpName
 
         # SubnetRequest must be an instance of SpecificSubnet
         if not isinstance(subnet_request, ipam_req.SpecificSubnetRequest):
@@ -428,6 +430,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         config = soap_client.service.getEntityByName(0, paramsBAM['bam_config_name'], 'Configuration')
         configID = config['id']
         LOG.info("BCN: Got configID %s" % (configID))
+
         LOG.info("BCN: Getting ParentBlockID Info ...")
 
         blockType = ""
@@ -464,7 +467,11 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
 
         cidr = str(subnet_request._subnet_cidr.ip) +"/" +str(subnet_request._subnet_cidr.prefixlen)
         LOG.info("BCN: Creating Network %s in BAM  ..." % (cidr))
-	
+
+        # HACK BS
+        tmpName = "subnet_name"
+        subnet_request.name = "brian"
+
         bcNetID = addBCNetwork(parentBlockId, cidr, subnet_request.name, subnet_request._subnet_id, str(subnet_request._subnet_cidr.version))
 
         LOG.info("BCN: Network Added, NetworkId = %s, Name = %s UUID = %s\n" % (bcNetID, subnet_request.name, subnet_request._subnet_id))
@@ -529,7 +536,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
             raise n_exc.SubnetNotFound(subnet_id=subnet_id)
 
         # BlueCat additions
-        paramsBAM = getBCNConfig(BC_configFileName)
+        paramsBAM = getBCNConfig(BC_configFileName, "BAM")
 
         if (paramsBAM['bam_updatemodify_networks'] == "True"):
 			soap_client = _bam_login(paramsBAM)
@@ -960,4 +967,3 @@ def _get_bam_viewid(soap_client, configId, viewName):
    viewId = long(view['id'])
    #LOG.info("BCN: Got View ID %d" % (viewId))
    return viewId
-   
