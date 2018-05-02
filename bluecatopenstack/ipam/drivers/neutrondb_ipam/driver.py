@@ -403,16 +403,12 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         paramsBAM = getBCNConfig(BC_configFileName)
 
         if self._subnetpool:
-            
-	    #tmpName = subnet_request.name
-            # HACK BS
-	    tmpName = "subnet_name"
-		
-		
-            subnet = super(NeutronDbPool, self).allocate_subnet(subnet_request)
-            subnet_request = subnet.get_details()
-
-            subnet_request.name = tmpName
+	#tmpName = subnet_request.name
+	# HACK BS
+		tmpName = "subnet_name"
+		subnet = super(NeutronDbPool, self).allocate_subnet(subnet_request)
+        	subnet_request = subnet.get_details()
+		subnet_request.name = tmpName
 
         # SubnetRequest must be an instance of SpecificSubnet
         if not isinstance(subnet_request, ipam_req.SpecificSubnetRequest):
