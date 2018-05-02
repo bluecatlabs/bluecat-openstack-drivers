@@ -403,7 +403,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         paramsBAM = getBCNConfig(BC_configFileName)
 
         if self._subnetpool:
-	#tmpName = subnet_request.name
+		tmpName = subnet_request.name
 	# HACK BS
 		tmpName = "subnet_name"
 		subnet = super(NeutronDbPool, self).allocate_subnet(subnet_request)
