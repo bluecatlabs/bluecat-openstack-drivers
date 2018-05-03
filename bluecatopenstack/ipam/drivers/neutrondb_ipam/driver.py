@@ -405,7 +405,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         if self._subnetpool:
             #tmpName = subnet_request.name
             # HACK BS
-            tmpName = "subnet_name"
+            tmpName = "preallocation_name"
             subnet = super(NeutronDbPool, self).allocate_subnet(subnet_request)
             subnet_request = subnet.get_details()
             subnet_request.name = tmpName
@@ -469,9 +469,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         LOG.info("BCN: Creating Network %s in BAM  ..." % (cidr))
 
         # HACK BS
-        tmpName = "subnet_name"
-        subnet_request.name = "brian"
-
+        subnet_request.name = "subnet-" + cidr 
         bcNetID = addBCNetwork(parentBlockId, cidr, subnet_request.name, subnet_request._subnet_id, str(subnet_request._subnet_cidr.version))
 
         LOG.info("BCN: Network Added, NetworkId = %s, Name = %s UUID = %s\n" % (bcNetID, subnet_request.name, subnet_request._subnet_id))
