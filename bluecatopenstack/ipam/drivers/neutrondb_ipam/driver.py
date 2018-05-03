@@ -469,7 +469,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
         LOG.info("BCN: Creating Network %s in BAM  ..." % (cidr))
 
         # HACK BS
-        subnet_request.name = "subnet-" + cidr 
+        subnet_request.name = "subnet-" + cidr
         bcNetID = addBCNetwork(parentBlockId, cidr, subnet_request.name, subnet_request._subnet_id, str(subnet_request._subnet_cidr.version))
 
         LOG.info("BCN: Network Added, NetworkId = %s, Name = %s UUID = %s\n" % (bcNetID, subnet_request.name, subnet_request._subnet_id))
@@ -534,7 +534,7 @@ class NeutronDbPool(subnet_alloc.SubnetAllocator):
             raise n_exc.SubnetNotFound(subnet_id=subnet_id)
 
         # BlueCat additions
-        paramsBAM = getBCNConfig(BC_configFileName, "BAM")
+        paramsBAM = getBCNConfig(BC_configFileName)
 
         if (paramsBAM['bam_updatemodify_networks'] == "True"):
 			soap_client = _bam_login(paramsBAM)
