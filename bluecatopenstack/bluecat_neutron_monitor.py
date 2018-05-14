@@ -31,10 +31,21 @@ import dns.resolver
 import dns.exception
 import string
 import ipaddress
+import netaddr
 import datetime
 import sys
 import json
 import logging as log
+
+from inspect import getmembers
+from pprint import pprint
+import httplib
+from suds.client import Client
+from suds import WebFault
+from suds.transport.http import HttpAuthenticated
+from pip._vendor.ipaddress import ip_address
+from configparser import ConfigParser
+
 from kombu import BrokerConnection
 from kombu import Exchange
 from kombu import Queue
@@ -51,9 +62,14 @@ bluecat_neutron_parameters = [
     cfg.StrOpt('bcn_neutron_domain_override', default=None, help=("BlueCat Neutron Monitor Domain Overide")),
     cfg.StrOpt('bcn_neutron_debuglevel', default="INFO", help=("BlueCat Neutron Monitor Debug Level")),
     cfg.DictOpt('bcn_neutron_TSIG', default=None, help=("BlueCat Neutron TSIG")),
-    cfg.StrOpt('bcn_neutron_replace', default="False", help=("BlueCat Neutron Monitor Replace Policy"))]
-
-version = 1.2
+    cfg.StrOpt('bcn_neutron_replace', default="False", help=("BlueCat Neutron Monitor Replace Policy")),
+    cfg.StrOpt('bam_address', default=None, help=("BAM IP Address")),
+    cfg.StrOpt('bam_api_user', default=None, help=("BAM API User Name")),
+    cfg.StrOpt('bam_api_pass', default=None, help=("BAM API User Password")),
+    cfg.StrOpt('bam_config_name', default=None, help=("BAM Configuration Name")),
+    cfg.StrOpt('bam_updatemodify_networks', default=None, help=("BAM Update Of Modify Networks"))]
+    
+version = 0.3
 
 EXCHANGE_NAME="neutron"
 ROUTING_KEY="notifications.info"
@@ -67,6 +83,16 @@ PORT_END="port.create.end"
 PORT_U_START="port.update.start"
 PORT_U_END="port.update.end"
 ADDITIONAL_RDCLASS = 65535
+
+SUBNET_CREATE_START="subnet.create.start"
+SUBNET_CREATE_END="subnet.create.end"
+SUBNET_DELETE_END="subnet.delete.end"
+SUBNET_UPDATE_END="subnet.update.end"
+
+NETWORK_CREATE_START="network.create.start"
+NETWORK_CREATE_END="network.create.end"
+NETWORK_DELETE_END="network.delete.end"
+NETWORK_UPDATE_END="network.update.end"
 
 bluecat_group = cfg.OptGroup(name='bluecat',title='Bluecat Group')
 
@@ -90,6 +116,13 @@ monitor_debuglevel = NEUTRON_CONF.bluecat.bcn_neutron_debuglevel
 monitor_replace = NEUTRON_CONF.bluecat.bcn_neutron_replace
 monitor_TSIG = bcn_neutron_TSIG = NEUTRON_CONF.bluecat.bcn_neutron_TSIG
 
+bam_address = NEUTRON_CONF.bluecat.bam_address
+bam_api_user = NEUTRON_CONF.bluecat.bam_api_user
+bam_api_pass = NEUTRON_CONF.bluecat.bam_api_pass
+bam_config_name = NEUTRON_CONF.bluecat.bam_config_name
+bam_updatemodify_networks = NEUTRON_CONF.bluecat.bam_updatemodify_networks
+
+
 print 'BlueCat Neutron Monitor Transport URL = ',monitor_broker
 print 'BlueCat Neutron Monitor NameServer =',monitor_nameserver
 print 'BlueCat Neutron Monitor Logfile =',monitor_logfile
@@ -97,6 +130,8 @@ print 'BlueCat Neutron Monitor Debug Level = ',monitor_debuglevel
 print 'BlueCat Nuetron Monitor TTL =',monitor_ttl
 print 'BlueCat Nuetron Monitor Domain Override = ',monitor_domain_override
 print 'BlueCat Nuetron Monitor Replace = ',monitor_replace
+
+
 if bcn_neutron_TSIG.keys():
 	print "Domains with configured TSIG keys:"
 	neutronsecuredomains = bcn_neutron_TSIG.keys()
@@ -104,8 +139,16 @@ if bcn_neutron_TSIG.keys():
 		print "Domain: \033[0;32m %s \033[1;m" %(neutronsecuredomains[i])
 		print "TSIG Key: \033[0;32m %s \033[1;m" %(bcn_neutron_TSIG[neutronsecuredomains[i]])
 
+print "BlueCat Address Manager:\033[0;32m  %s \033[1;m" % bam_address
+print "BlueCat Address Manager API User:\033[0;32m  %s \033[1;m" % bam_api_user
+print "BlueCat Address Manager API Password:\033[0;32m %s \033[1;m" % bam_api_pass
+print "BlueCat Configuration Name:\033[0;32m %s \033[1;m" % bam_config_name
+print "BlueCat Update/Modify Network Policy:\033[0;32m %s \033[1;m" % bam_updatemodify_networks
+
+
 # read from Nuetron.conf [bluecat] settings parameters bcn_neutron_debuglevel and bcn_neutron_logfile
-log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
+#log.basicConfig(filename=monitor_logfile, level=monitor_debuglevel, format='%(asctime)s %(message)s')
+log.basicConfig(filename=monitor_logfile, level="INFO", format='%(asctime)s %(message)s')
 
 class TSIGSecured():
         TSIGKey=""
@@ -306,6 +349,93 @@ def splitFQDN(name):
 	domain = name.partition('.')[2]
 	return hostname,domain
 
+def getItemsFromResponse(data):
+    dataStr = data.decode("utf-8")
+    words = dataStr.split(',')
+    return words
+
+
+def getPropsField(properties, keyName):
+    propsArr = properties.split('|')
+    for prop in propsArr:
+        kv = prop.split("=")
+        if kv[0] == keyName:
+            return kv[1]
+            break
+    return None
+
+def updatePropsStr(props, fieldName, value):
+    params = {}
+    keyValPairs = props.split('|')
+    for keyValPair in keyValPairs:
+        keyVal = keyValPair.split('=')
+        if len(keyVal) > 1:
+            params[keyVal[0]] = keyVal[1]
+    params[fieldName] = value
+    newProps = ""
+    for key in params:
+        newProps += key +"=" +params[key] +'|'
+    return newProps
+
+def _bam_login():
+   log.debug ('\033[0;32m[BAM] Connecting to BAM at %s ...' % bam_address)
+   soap_client = Client('http://%s/Services/API?wsdl' % bam_address)
+   soap_client.service.login(bam_api_user, bam_api_pass)
+   return soap_client
+
+def _bam_logout(soap_client):
+   log.debug ('\033[0;32m[BAM] Disconnecting from BAM at %s ...\033[1;m' % bam_address)
+   soap_client.service.logout()
+
+
+def _get_bam_configid(soap_client):
+   config = soap_client.service.getEntityByName(0, bam_config_name, 'Configuration')
+   configID = long(config['id'])
+   log.debug ('\033[0;32m[BAM] ConfigID %d\033[1;m' % (configID))
+   return configID
+
+
+def config_parser(conf,list):
+	CONF = cfg.CONF
+	CONF.register_group(bluecat_group)
+	CONF.register_opts(list, "bluecat")
+	CONF(default_config_files=conf)
+	return CONF
+
+def updateBCNetwork(soap_client, configID, netCIDR, newNetName, subnet_id, network_id,tenant_id, project_id,subnet_pool_id ):
+    # Get netid
+    ipNet = netaddr.IPNetwork(netCIDR)
+
+    log.debug ('\033[0;32m[BAM] Getting NetID Info  ... \033[1;m')
+    net = ""
+    if ipNet.version == 4:
+        net = soap_client.service.getIPRangedByIP(configID, "IP4Network", ipNet[0])
+    else:
+        net = soap_client.service.getIPRangedByIP(configID, "IP6Network", ipNet[0])
+
+    netid = net['id']
+
+    if not netid:
+        log.debug ('\033[0;32m[BAM] [Warning!!!] : Network does not exist - Skipping ....\033[1;m' % netCIDR)
+        return
+
+    newSubnetID = updatePropsStr(net['properties'], "OS_SUBNET_ID", subnet_id)
+    newNetworkID = updatePropsStr(net['properties'], "OS_NETWORK_ID", network_id)
+    newTenantID = updatePropsStr(net['properties'], "OS_TENANT_ID", tenant_id)
+    newProjectID = updatePropsStr(net['properties'], "OS_PROJECT_ID", project_id)
+    newSubnetPoolID = updatePropsStr(net['properties'], "OS_SUBNET_POOL_ID", subnet_pool_id)
+    
+    newProps  = newSubnetID + newNetworkID + newTenantID + newProjectID + newSubnetPoolID
+    
+    # new, subnet_id, "OS_NETWORK_ID", network_id, "OS_TENANT_ID", tenant_id, "OS_PROJECT_ID", project_id, "OS_SUBNET_POOL_ID")
+    
+    net['name'] = newNetName
+    net['properties'] = newProps
+
+    print "[BAM] Updating Network ..."
+    soap_client.service.update(net)
+	
+
 class BCUpdater(ConsumerMixin):
 
     def __init__(self, connection):
@@ -413,6 +543,77 @@ class BCUpdater(ConsumerMixin):
  			for temp in jbody['payload']['port']['fixed_ips']:
  				addr = temp['ip_address']
  				log.info ('[port.update.end] -> IP ADDRESS = %s' % addr)
+
+		elif event_type == SUBNET_CREATE_START:
+			log.info ('\033[0;32m[subnet.create.start]\033[1;m')
+			subnet_name = jbody['payload']['subnet']['name']
+			network_id = jbody['payload']['subnet']['network_id']
+			tenant_id = jbody['payload']['subnet']['tenant_id']
+			
+			log.info ('\033[0;32m[subnet.create.start] Subnet Name [%s] \033[1;m' % subnet_name)
+			log.info ('\033[0;32m[subnet.create.start] Network ID: %s \033[1;m' % network_id)
+			log.info ('\033[0;32m[subnet.create.start] Tenant ID: %s \033[1;m' % tenant_id)
+
+			
+		elif event_type == SUBNET_CREATE_END:
+			log.info ('\033[0;32m[subnet.create.end]\033[1;m')
+			subnet_name = jbody['payload']['subnet']['name']
+			subnet_address = jbody['payload']['subnet']['cidr']	
+			network_id = jbody['payload']['subnet']['network_id']
+			tenant_id = jbody['payload']['subnet']['tenant_id']
+			gateway_ip = jbody['payload']['subnet']['gateway_ip']
+			subnet_id = jbody['payload']['subnet']['id']
+			
+			subnet_pool_id = jbody['payload']['subnet']['subnetpool_id']
+			project_id = jbody['payload']['subnet']['project_id']
+			
+			log.info ('\033[0;32m[subnet.create.end] Subnet Name: %s \033[1;m' % subnet_name)
+			log.info ('\033[0;32m[subnet.create.end] Subnet Address: %s \033[1;m' % subnet_address)
+			log.info ('\033[0;32m[subnet.create.end] Gateway IP: %s \033[1;m' % gateway_ip)
+			log.info ('\033[0;32m[subnet.create.end] Network ID: %s \033[1;m' % network_id)
+			log.info ('\033[0;32m[subnet.create.end] Tenant ID: %s \033[1;m' % tenant_id)
+			log.info ('\033[0;32m[subnet.create.end] Subnet ID: %s \033[1;m' % subnet_id)
+			log.info ('\033[0;32m[subnet.create.end] Subnet Pool ID: %s \033[1;m' % subnet_pool_id)
+			log.info ('\033[0;32m[subnet.create.end] Project ID: %s \033[1;m' % project_id)
+			soap_client = _bam_login()
+			configID = _get_bam_configid(soap_client)
+
+			log.info ('\033[0;32m[subnet.create.end] Updating BAM Network %s with name %s \033[1;m' % (subnet_address, subnet_name))
+			updateBCNetwork(soap_client, configID, subnet_address, subnet_name, subnet_id, network_id,tenant_id,project_id,subnet_pool_id)
+			_bam_logout(soap_client)
+			
+				
+		elif event_type == SUBNET_DELETE_END:
+			log.info ('\033[0;32m[subnet.delete.end]\033[1;m')
+			log.info ('\033[0;32m[subnet.delete.end]\033[1;m')
+			subnet_name = jbody['payload']['subnet']['name']
+			subnet_address = jbody['payload']['subnet']['cidr']
+			network_id = jbody['payload']['subnet']['network_id']
+			tenant_id = jbody['payload']['subnet']['tenant_id']
+			gateway_ip = jbody['payload']['subnet']['gateway_ip']
+			subnet_pool_id = jbody['payload']['subnet']['subnetpool_id']
+			project_id = jbody['payload']['subnet']['project_id']
+			subnet_id = jbody['payload']['subnet']['id']
+
+			log.info ('\033[0;32m[subnet.delete.end] Subnet Name: %s \033[1;m' % subnet_name)
+			log.info ('\033[0;32m[subnet.delete.end] Subnet Address: %s \033[1;m' % subnet_address)
+			log.info ('\033[0;32m[subnet.delete.end] Gateway IP: %s \033[1;m' % gateway_ip)
+			log.info ('\033[0;32m[subnet.delete.end] Network ID: %s \033[1;m' % network_id)
+			log.info ('\033[0;32m[subnet.delete.end] Tenant ID: %s \033[1;m' % tenant_id)
+			log.info ('\033[0;32m[subnet.delete.end] Subnet ID: %s \033[1;m' % subnet_id)
+			log.info ('\033[0;32m[subnet.delete.end] Subnet Pool ID: %s \033[1;m' % subnet_pool_id)
+			log.info ('\033[0;32m[subnet.delete.end] Project ID: %s \033[1;m' % project_id)
+				
+		elif event_type == SUBNET_UPDATE_END:
+			log.info ('\033[0;32m[subnet.update.end]\033[1;m')
+		elif event_type == NETWORK_CREATE_START:
+			log.info ('\033[0;32m[network.create.start]\033[1;m')
+		elif event_type == NETWORK_CREATE_END:
+			log.info ('\033[0;32m[network.create.end]\033[1;m')
+		elif event_type == NETWORK_DELETE_END:
+			log.info ('\033[0;32m[network.delete.end]\033[1;m')
+		elif event_type == NETWORK_UPDATE_END:
+			log.info ('\033[0;32m[network.update.end]\033[1;m')
 
 if __name__ == "__main__":
     log.info("BlueCat Neutron Monitor - %s Bluecat Networks 2018" % version)
