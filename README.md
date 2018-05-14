@@ -35,6 +35,50 @@ All development has taken place against DevStack, installation directly onto pro
 		`Administration > Object Types > IPv6 Network  > New > User Defined Field`
 
 		Display Name `UUID`, Field Name `UUID`, Type `Text`
+		
+- Create new UDFs for the IPv4 Networks:
+
+		`Administration > Object Types > IPv4 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Network ID`, Field Name `OS_NETWORK_ID`, Type `Text`
+
+		`Administration > Object Types > IPv4 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Project ID`, Field Name `OS_PROJECT_ID`, Type `Text`
+
+		`Administration > Object Types > IPv4 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Subnet ID`, Field Name `OS_SUBNET_ID`, Type `Text`
+
+		`Administration > Object Types > IPv4 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Subnet Pool ID`, Field Name `OS_SUBNET_POOL_ID`, Type `Text`
+		
+		`Administration > Object Types > IPv4 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Tenant ID`, Field Name `OS_TENANT_ID`, Type `Text`
+		
+- Create new UDFs for the IPv6 Networks:
+
+		`Administration > Object Types > IPv6 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Network ID`, Field Name `OS_NETWORK_ID`, Type `Text`
+
+		`Administration > Object Types > IPv6 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Project ID`, Field Name `OS_PROJECT_ID`, Type `Text`
+
+		`Administration > Object Types > IPv6 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Subnet ID`, Field Name `OS_SUBNET_ID`, Type `Text`
+
+		`Administration > Object Types > IPv6 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Subnet Pool ID`, Field Name `OS_SUBNET_POOL_ID`, Type `Text`
+		
+		`Administration > Object Types > IPv6 Network  > New > User Defined Field`
+
+		Display Name `OpenStack Tenant ID`, Field Name `OS_TENANT_ID`, Type `Text`
 
 - Create IPv4 public and private blocks, for example `10.0.0.0/8 [OpenStack Public]` and `192.168.0.0/16 [OpenStack Private]`
 
@@ -44,7 +88,7 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 
 - Edit the local.conf for Devstack to pull the BlueCat OpenStack Neutron IPAM Driver from GitHUB and set driver parameters
 
-		enable_plugin bluecatopenstack https://github.com/bluecatlabs/bluecat-openstack-drivers.git 0.2.2
+		enable_plugin bluecatopenstack https://github.com/bluecatlabs/bluecat-openstack-drivers.git 0.3
 		enable_service bluecatopenstack
 
 		bam_address=192.168.1.100
@@ -102,7 +146,7 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 - Post installation check the driver is installed by running `pip show bluecatopenstack`
 
 		Name: bluecatopenstack
-		Version: 0.2.2
+		Version: 0.3
 		Summary: Bluecat Networks Openstack Drivers
 		Home-page: https://github.com/bluecatlabs/bluecat-openstack-drivers.git
 		Author: B.Shorland
