@@ -1,4 +1,6 @@
-# BlueCat OpenStack Driver
+![alt text](logo.png "logo")
+
+# OpenStack Neutron IPAM Driver
 The BlueCat OpenStack integration consists of three Python-based components:
 
 - The BlueCat OpenStack Neutron IPAM Driver, which documents OpenStack subnets,ports and compute instances as they are provisioned in Openstack within the BlueCat Address Manager™ (BAM)
