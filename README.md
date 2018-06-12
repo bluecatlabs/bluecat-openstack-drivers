@@ -130,7 +130,7 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 - Post installation check the driver is installed by running `pip show bluecatopenstack`.
 
 		Name: bluecatopenstack
-		Version: 0.2.2
+		Version: 0.3
 		Summary: Bluecat Networks Openstack Drivers
 		Home-page: https://github.com/bluecatlabs/bluecat-openstack-drivers.git
 		Author: B.Shorland
