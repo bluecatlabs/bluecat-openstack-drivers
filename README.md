@@ -141,7 +141,7 @@ Note :- OpenStack Subnets (Networks in BlueCat terminology) are dynamically crea
 
 #### Install the BlueCat Neutron Driver on Openstack
 
-- Clone the git repo  
+- Clone the git repo `git clone https://github.com/bluecatlabs/bluecat-openstack-drivers.git`
 
 - Build the driver with `python setup.py install`
 
